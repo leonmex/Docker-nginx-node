@@ -19,6 +19,9 @@ A clean and modular Docker environment for Node.js applications served with Ngin
 2.  **Environment Setup:**
     Duplicate the `.env-example` file to `.env` (if applicable) and configure your environment variables.
 
+    > [!IMPORTANT]
+    > The `APP_ROUTE` variable in `.env` must point to the absolute path where your project source code resides. Additionally, the target project **must** contain a `Dockerfile` compatible with the one provided in this repository (e.g., matching build stages and arguments).
+
     ```bash
     cp .env-example .env
     ```
