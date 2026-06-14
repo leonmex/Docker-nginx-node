@@ -1,0 +1,34 @@
+---
+import LanguageSwitcher from './LanguageSwitcher.tsx';
+import { useTranslations } from '../i18n/utils';
+
+interface Props {
+  currentLang: string;
+}
+
+const { currentLang } = Astro.props;
+const t = useTranslations(currentLang);
+---
+
+<header class="header-sticky">
+  <div class="container header-container">
+    <!-- Logo -->
+    <a href={`/${currentLang}/`} class="header-logo">
+      <span class="header-logo-badge">NB</span>
+      <span>Noel Barrera</span>
+    </a>
+
+    <!-- Navigation Links -->
+    <nav class="header-nav">
+      <a href="#experience" class="nav-link">{t('nav.experience')}</a>
+      <a href="#projects" class="nav-link">{t('nav.projects')}</a>
+      <a href="#about" class="nav-link">{t('nav.about')}</a>
+      <a href="#contact" class="nav-link">{t('nav.contact')}</a>
+    </nav>
+
+    <!-- Language Selector -->
+    <div class="header-actions">
+      <LanguageSwitcher client:load currentLang={currentLang} />
+    </div>
+  </div>
+</header>

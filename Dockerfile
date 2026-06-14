@@ -1,4 +1,4 @@
-ARG NODE_VERSION=20
+ARG NODE_VERSION=22
 ARG NGINX_VERSION=1.21
 ARG ALPINE_VERSION=3.20
 ARG APP_ROUTE=.
@@ -9,10 +9,8 @@ WORKDIR /usr/src/app
 COPY ${APP_ROUTE}/package*.json /usr/src/app
 
 RUN set -eux \
-    & apk add \
+    && apk add \
     --no-cache \
-    nodejs \
-    yarn \
     git \
     wget \
     ;
@@ -42,7 +40,7 @@ COPY ${APP_ROUTE}/ /usr/src/app
 COPY docker/node/app/docker-entrypoint.sh /usr/local/bin/docker-entrypoint
 RUN chmod +x /usr/local/bin/docker-entrypoint
 
-# ENTRYPOINT ["docker-entrypoint"]
+ENTRYPOINT ["docker-entrypoint"]
 CMD ["tail", "-f", "/dev/null"]
 
 FROM base as typescript

@@ -1,0 +1,40 @@
+---
+import ProjectGrid from './ProjectGrid.tsx';
+import profile from '../data/profile.json';
+import n8nProjects from '../../data/n8n-projects.json';
+import { useTranslations } from '../i18n/utils';
+
+interface Props {
+  currentLang: string;
+}
+
+const { currentLang } = Astro.props;
+const t = useTranslations(currentLang);
+
+const gridTranslations = {
+  all: t('projects.filter.all'),
+  personal: t('projects.filter.personal'),
+  automation: t('projects.filter.automation'),
+  viewWorkflow: t('projects.view_workflow'),
+  nodesLabel: t('projects.nodes')
+};
+---
+
+<section id="projects" class="projects-section">
+  <div class="container">
+    <div class="projects-header">
+      <span class="caption-mono projects-eyebrow">
+        Portfolio & Pipelines
+      </span>
+      <h2 class="display-lg">{t('projects.title')}</h2>
+      <p class="body-lg projects-subtitle-text">{t('projects.subtitle')}</p>
+    </div>
+
+    <ProjectGrid 
+      client:load 
+      personalProjects={profile.personalProjects} 
+      n8nProjects={n8nProjects} 
+      translations={gridTranslations} 
+    />
+  </div>
+</section>

@@ -1,0 +1,50 @@
+---
+import { useTranslations } from '../i18n/utils';
+import profile from '../data/profile.json';
+
+interface Props {
+  currentLang: string;
+}
+
+const { currentLang } = Astro.props;
+const t = useTranslations(currentLang);
+
+// Shorten the summary for the hero page as a fallback
+const shortBio = profile.summary;
+---
+
+<section class="hero-section">
+  <!-- Mesh Gradient Background -->
+  <div class="mesh-gradient-container">
+    <div class="mesh-gradient-backdrop"></div>
+  </div>
+
+  <div class="container hero-container">
+    <!-- Eyebrow Badge -->
+    <div class="hero-eyebrow">
+      <span class="caption-mono hero-badge-pill">
+        {t('hero.badge')}
+      </span>
+    </div>
+
+    <!-- Main Title -->
+    <h1 class="display-xl hero-title-text">
+      Build and deploy on the AI Cloud.
+    </h1>
+
+    <!-- Short Bio (loads translated hero.bio or falls back to parsed summary) -->
+    <p class="body-lg hero-bio-text">
+      {t('hero.bio') || shortBio}
+    </p>
+
+    <!-- CTAs -->
+    <div class="hero-cta-group">
+      <a href="#projects" class="btn btn-primary">
+        {t('hero.cta.primary')}
+      </a>
+      <a href="#contact" class="btn btn-secondary">
+        {t('hero.cta.secondary')}
+      </a>
+    </div>
+  </div>
+</section>

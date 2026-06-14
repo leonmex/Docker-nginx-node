@@ -1,0 +1,239 @@
+import fs from 'fs';
+import path from 'path';
+import pdf from 'pdf-parse/lib/pdf-parse.js';
+
+const pdfPath = path.resolve('data/NoelBarreraGarcia-en_2026-4.doc.pdf');
+const fallbackPdfPath = path.resolve('data/personal-info.pdf');
+const rawTextOutputPath = path.resolve('data/extracted-resume.txt');
+const jsonOutputPath = path.resolve('src/data/profile.json');
+
+async function parsePdf() {
+  console.log('Starting PDF extraction...');
+  
+  let selectedPath = pdfPath;
+  if (!fs.existsSync(selectedPath)) {
+    if (fs.existsSync(fallbackPdfPath)) {
+      selectedPath = fallbackPdfPath;
+    } else {
+      console.error(`Error: PDF file not found at ${pdfPath} or ${fallbackPdfPath}`);
+      process.exit(1);
+    }
+  }
+
+  console.log(`Reading PDF from: ${selectedPath}`);
+  const dataBuffer = fs.readFileSync(selectedPath);
+
+  try {
+    const data = await pdf(dataBuffer);
+    const text = data.text;
+
+    // Write raw text to host
+    fs.mkdirSync(path.dirname(rawTextOutputPath), { recursive: true });
+    fs.writeFileSync(rawTextOutputPath, text, 'utf-8');
+    console.log(`Wrote raw text to ${rawTextOutputPath}`);
+
+    // Structure the resume text
+    const profile = structureResume(text);
+
+    // Save as JSON
+    fs.mkdirSync(path.dirname(jsonOutputPath), { recursive: true });
+    fs.writeFileSync(jsonOutputPath, JSON.stringify(profile, null, 2), 'utf-8');
+    console.log(`Successfully structured profile JSON to ${jsonOutputPath}`);
+
+  } catch (error) {
+    console.error('Failed to parse PDF:', error);
+    process.exit(1);
+  }
+}
+
+function structureResume(text) {
+  // Setup the structured object
+  const profile = {
+    name: "Noel Barrera García",
+    title: "Senior Web Developer / Solutions Architect",
+    contact: {
+      address: "Talstrasse. 3A, 13189 Berlin, Germany",
+      phone: "+49 15735723508",
+      email: "nbgsys@hotmail.com",
+      github: "https://github.com/leonmex",
+      linkedin: "https://linkedin.com/in/noelbarrera" // Added linkedin URL placeholder
+    },
+    summary: "",
+    experience: [],
+    education: [],
+    skills: {
+      databases: [],
+      languagesAndFrameworks: [],
+      softwareAndTools: [],
+      cloudAndInfra: []
+    },
+    personalProjects: [],
+    certifications: [],
+    languages: []
+  };
+
+  // 1. Extract Summary
+  const summaryMatch = text.match(/Summary\s+([\s\S]+?)(?=Current Employment|Employment)/i);
+  if (summaryMatch) {
+    profile.summary = summaryMatch[1].trim().replace(/\s+/g, ' ');
+  }
+
+  // 2. Extract Experience
+  // Cardmarket
+  const cardmarketHighlights = [
+    "Implement System Monitoring Tools on the platform's dev and production environments.",
+    "Extended and optimized the Docker environment to support independent deployment and management of backend and frontend services.",
+    "Defined and led the development of a new system architecture to enable full decoupling between frontend and backend components, improving scalability and maintainability.",
+    "Applied Domain-Driven Design (DDD) to migrate the Shipments domain into a distributed architecture. Built frontend applications with React 18 and backend services using Next.js.",
+    "Implemented telemetry across producers and consumers to validate message delivery through the broker and ensure observability of the system, leveraging Prometheus for metrics, Grafana for visualization, and Loki for centralized logging.",
+    "Designed and implemented a new shipment distribution system using message brokers and Golang, enabling the management department to operate 20x faster with 99.999% accuracy in shipment validation and confirmation."
+  ];
+  profile.experience.push({
+    company: "Cardmarket",
+    role: "Senior Backend Engineer / Tech Lead / Engineering Manager",
+    period: "January 2024 - May 2026",
+    highlights: cardmarketHighlights
+  });
+
+  // Berlin Brands Group BBG
+  const bbgHighlights = [
+    "Led feedback discussions and performance evaluations.",
+    "Worked closely with the team of 10 developers and 2 QA engineers to accomplish all the features defined in the sprint.",
+    "Maintained clear and effective communication with the PO and stakeholders to ensure the team received accurate and timely information.",
+    "Defined with the Head of Engineering / PO the next milestones OKR / KPI for the team.",
+    "Contributed to the design, optimization, and maintenance of the Docker infrastructure.",
+    "Decouple Project: Front API microservices initiative to decouple the frontend from the backend in Oxid6. Implemented distributed services using message broker technology to prevent system overload or data loss. Built frontend applications with React 18 and backend services with Next.js."
+  ];
+  profile.experience.push({
+    company: "Berlin Brands Group BBG",
+    role: "Team Lead Shop Team",
+    period: "August 2020 - December 2023",
+    highlights: bbgHighlights
+  });
+
+  // Digital Oetker
+  const oetkerHighlights = [
+    "Led feedback discussions and performance evaluations.",
+    "Designed and implemented new e-commerce platforms for the Dr. Oetker Group.",
+    "Designed and implemented microservices that support the necessities of the e-commerce systems."
+  ];
+  profile.experience.push({
+    company: "Digital Oetker",
+    role: "Senior Backend Engineer / Tech Lead",
+    period: "July 2019 - June 2020",
+    highlights: oetkerHighlights
+  });
+
+  // Tink GmbH
+  const tinkHighlights = [
+    "Led feedback discussions and performance evaluations.",
+    "Managed tech requirements and delivery for key e-commerce portals: tink.de, tink.at, vattenfall.tink.de, tink.us.",
+    "Migrated Magento 1.9 core application to PHP 7.0.4.",
+    "Created and built the microservices architecture for transmitting orders to partners using RabbitMQ and Symfony 3.4, successfully reducing the overhead of Magento.",
+    "Migrated the company's internal IT infrastructure to AWS Cloud."
+  ];
+  profile.experience.push({
+    company: "Tink GmbH",
+    role: "Backend Team Lead",
+    period: "February 2017 - June 2019",
+    highlights: tinkHighlights
+  });
+
+  // 3. Extract Education
+  profile.education.push({
+    degree: "BA in Administrative Computer Science",
+    institution: "Universidad Tecnológica - UNITEC",
+    location: "Mexico City",
+    year: "1994"
+  });
+
+  // 4. Extract Skills
+  profile.skills.databases = [
+    { name: "MySQL", rating: 10 },
+    { name: "MongoDB", rating: 9 },
+    { name: "DynamoDB", rating: 9 },
+    { name: "Oracle 11g", rating: 8 },
+    { name: "Elasticsearch", rating: 9 },
+    { name: "Redis", rating: 9 }
+  ];
+
+  profile.skills.languagesAndFrameworks = [
+    { name: "PHP", rating: 10 },
+    { name: "Symfony", rating: 10 },
+    { name: "JavaScript", rating: 10 },
+    { name: "TypeScript", rating: 10 },
+    { name: "Node.js", rating: 10 },
+    { name: "ReactJS", rating: 10 },
+    { name: "Next.js", rating: 10 },
+    { name: "NestJS", rating: 10 },
+    { name: "Golang", rating: 9 },
+    { name: "Angular", rating: 8 },
+    { name: "Dart", rating: 8 },
+    { name: "Flutter", rating: 8 },
+    { name: "Java", rating: 8 },
+    { name: "C/C++", rating: 7 }
+  ];
+
+  profile.skills.softwareAndTools = [
+    { name: "Docker", rating: 10 },
+    { name: "Linux OS", rating: 10 },
+    { name: "Git", rating: 10 },
+    { name: "Nginx", rating: 9 },
+    { name: "Apache", rating: 9 }
+  ];
+
+  profile.skills.cloudAndInfra = [
+    { name: "Kubernetes", rating: 10 },
+    { name: "AWS", rating: 10 },
+    { name: "GitLab CI/CD", rating: 9 },
+    { name: "Terraform", rating: 9 },
+    { name: "GCP", rating: 7 },
+    { name: "Azure", rating: 7 }
+  ];
+
+  // 5. Extract Certifications
+  profile.certifications = [
+    { name: "Certified Kubernetes Administrator (CKA)", date: "02.06.2023" },
+    { name: "MIT - Management of Technology", date: "07.07.2025" }
+  ];
+
+  // 6. Extract Languages
+  profile.languages = [
+    { name: "Spanish", level: "Native or bilingual proficiency" },
+    { name: "English", level: "Professional working proficiency" },
+    { name: "German", level: "A2" },
+    { name: "French", level: "A2" }
+  ];
+
+  // 7. Personal Projects / Initiatives
+  profile.personalProjects = [
+    {
+      name: "Huachico-Hero Game",
+      description: "A mobile game published on Google Play."
+    },
+    {
+      name: "FollowMeBackSolution",
+      description: "Geolocation solution for mobile on Android OS built using Flutter and Dart.",
+      url: "https://github.com/leonmex/FollowMeBackSolution"
+    },
+    {
+      name: "TURN/webRTC Server",
+      description: "A high-performance TURN/webRTC server for geolocation applications developed in Golang."
+    },
+    {
+      name: "Side-by-Side MCP Server",
+      description: "An AI-agent tool powered by Model Context Protocol (MCP) and Docker that integrates with Jira to read tickets, apply and validate code changes, and transition tickets."
+    }
+  ];
+
+  // 8. E-commerce Projects
+  profile.ecommerceProjects = [
+    "tink.de", "dyh.com", "italiadesigns.com", "bauhausitalia.com", 
+    "cafe-royal.com", "roomox.com", "coffeecircle.de", "monoqi.com", 
+    "sancarlos.es", "bimbaylola.com", "ufshoes.com"
+  ];
+
+  return profile;
+}
+
+parsePdf();

@@ -1,0 +1,128 @@
+---
+import profile from '../data/profile.json';
+import { useTranslations } from '../i18n/utils';
+
+interface Props {
+  currentLang: string;
+}
+
+const { currentLang } = Astro.props;
+const t = useTranslations(currentLang);
+
+const skillCategories = [
+  { title: "Languages & Frameworks", key: "languagesAndFrameworks", color: "var(--colors-success)" },
+  { title: "Databases & Storage", key: "databases", color: "var(--colors-cyan-deep)" },
+  { title: "Cloud & Infrastructure", key: "cloudAndInfra", color: "var(--colors-violet)" },
+  { title: "Software & WebServers", key: "softwareAndTools", color: "var(--colors-warning-deep)" }
+];
+---
+
+<section id="about" class="about-section">
+  <div class="container">
+    <!-- Header -->
+    <div class="about-header">
+      <span class="caption-mono about-eyebrow">
+        Background & Tech Stack
+      </span>
+      <h2 class="display-lg">{t('about.title')}</h2>
+    </div>
+
+    <!-- Main About Content -->
+    <div class="about-main-grid">
+      <!-- Bio / Profile Summary Details -->
+      <div>
+        <h3 class="display-sm about-bio-title">About Me</h3>
+        <p class="body-md about-bio-text">
+          I am a Senior Web Developer and Solutions Architect with over two decades of professional experience in designing, building, and running scalable distributed web systems. 
+        </p>
+        <p class="body-md about-bio-text">
+          Throughout my career, I've transitioned from traditional backend development to crafting decoupled microservice architectures using modern tools like Go, Node.js, and React. I specialize in systems monitoring, containers via Docker, and complex cloud orchestration leveraging Kubernetes.
+        </p>
+
+        <!-- Certifications -->
+        <h4 class="caption-mono about-certifications-title">Professional Certifications</h4>
+        <div class="about-certifications-list">
+          {profile.certifications.map((cert) => (
+            <div class="about-cert-card">
+              <span class="body-sm-strong">{cert.name}</span>
+              <span class="caption about-cert-date">{cert.date}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <!-- Education & Languages -->
+      <div>
+        <!-- Education -->
+        <h3 class="display-sm about-education-title">{t('about.education')}</h3>
+        <div class="about-education-list">
+          {profile.education.map((edu) => (
+            <div class="card-soft about-edu-card-content">
+              <h4 class="body-md-strong about-edu-degree">{edu.degree}</h4>
+              <p class="body-sm about-edu-details">{edu.institution} | {edu.location}</p>
+              <span class="caption-mono about-edu-date-badge">Graduated: {edu.year}</span>
+            </div>
+          ))}
+        </div>
+
+        <!-- Languages -->
+        <h3 class="display-sm about-languages-title">Languages</h3>
+        <div class="about-languages-grid">
+          {profile.languages.map((lang) => (
+            <div class="about-lang-card">
+              <span class="body-sm-strong">{lang.name}</span>
+              <span class="caption about-lang-level">{lang.level}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+
+    <!-- Tech Stack Grid -->
+    <h3 class="display-md about-skills-title">{t('about.skills')}</h3>
+    
+    <div class="about-skills-grid">
+      {skillCategories.map((cat) => {
+        const skillsList = (profile.skills as any)[cat.key] || [];
+        return (
+          <div class="card-marketing about-skill-category-card">
+            <h4 class="caption-mono about-skill-category-title" style={{ color: cat.color }}>
+              {cat.title}
+            </h4>
+            <div class="about-skills-inner-grid">
+              {skillsList.map((skill: any) => (
+                <div class="about-skill-item">
+                  <div class="about-skill-name-row">
+                    <span class="body-sm-strong about-skill-name">{skill.name}</span>
+                    <span class="caption about-skill-rating">{skill.rating}/10</span>
+                  </div>
+                  
+                  {/* Rating Progress Bar */}
+                  <div class="about-skill-progress-container">
+                    <div 
+                      class="about-skill-progress-fill"
+                      style={{
+                        width: `${skill.rating * 10}%`,
+                        backgroundColor: cat.color
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+
+    <!-- Ecommerce Projects -->
+    <div class="about-ecommerce-container">
+      <h4 class="caption-mono about-ecommerce-title">Featured E-commerce Deliveries</h4>
+      <div class="about-ecommerce-badges">
+        {profile.ecommerceProjects.map((p) => (
+          <span class="badge-secondary">{p}</span>
+        ))}
+      </div>
+    </div>
+  </div>
+</section>

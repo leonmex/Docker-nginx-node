@@ -1,0 +1,57 @@
+---
+import profile from '../data/profile.json';
+import { useTranslations } from '../i18n/utils';
+
+interface Props {
+  currentLang: string;
+}
+
+const { currentLang } = Astro.props;
+const t = useTranslations(currentLang);
+---
+
+<section id="experience" class="experience-section">
+  <div class="container experience-container">
+    <!-- Section Header -->
+    <div class="experience-header">
+      <span class="caption-mono experience-eyebrow">
+        {t('experience.eyebrow') || "Professional Journey"}
+      </span>
+      <h2 class="display-lg">{t('experience.title')}</h2>
+      <p class="body-lg">{t('experience.subtitle')}</p>
+    </div>
+
+    <!-- Timeline Wrapper -->
+    <div class="timeline-wrapper">
+      {profile.experience.map((job) => (
+        <div class="timeline-item">
+          <!-- Bullet Point Indicator -->
+          <div class="timeline-dot" />
+          
+          <!-- Period Badge -->
+          <div class="timeline-period-container">
+            <span class="caption-mono timeline-period-badge">
+              {job.period}
+            </span>
+          </div>
+
+          <!-- Job Details -->
+          <h3 class="display-sm timeline-job-role">{job.role}</h3>
+          <h4 class="body-md-strong timeline-job-company">
+            {job.company}
+          </h4>
+
+          <!-- Highlights -->
+          <ul class="timeline-highlights-list">
+            {job.highlights.map((highlight) => (
+              <li class="body-sm timeline-highlight-item">
+                <span class="timeline-highlight-dash">—</span>
+                {highlight}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

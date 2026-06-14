@@ -1,0 +1,407 @@
+[
+  {
+    "name": "Payment Validation & Fraud Detection",
+    "nodes": [
+        {
+            "name": "Stripe Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "position": [
+                250,
+                300
+            ],
+            "parameters": {
+                "path": "stripe-payment"
+            }
+        },
+        {
+            "name": "Validate Payment",
+            "type": "n8n-nodes-base.function",
+            "position": [
+                500,
+                300
+            ],
+            "parameters": {
+                "functionCode": "const amount = $json.amount || 0;\nconst duplicate = false;\nreturn [{json:{...$json,duplicate}}];"
+            }
+        },
+        {
+            "name": "Fraud Score",
+            "type": "n8n-nodes-base.function",
+            "position": [
+                750,
+                300
+            ],
+            "parameters": {
+                "functionCode": "const score = Math.floor(Math.random()*100);\nreturn [{json:{...$json,score}}];"
+            }
+        },
+        {
+            "name": "High Risk?",
+            "type": "n8n-nodes-base.if",
+            "position": [
+                1000,
+                300
+            ],
+            "parameters": {
+                "conditions": {
+                    "number": [
+                        {
+                            "value1": "={{$json.score}}",
+                            "operation": "larger",
+                            "value2": 70
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Slack Alert",
+            "type": "n8n-nodes-base.slack",
+            "position": [
+                1250,
+                200
+            ]
+        },
+        {
+            "name": "Approve Payment",
+            "type": "n8n-nodes-base.httpRequest",
+            "position": [
+                1250,
+                400
+            ],
+            "parameters": {
+                "url": "https://erp.company.com/payments"
+            }
+        }
+    ],
+    "connections": {
+        "Stripe Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Validate Payment",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Validate Payment": {
+            "main": [
+                [
+                    {
+                        "node": "Fraud Score",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Fraud Score": {
+            "main": [
+                [
+                    {
+                        "node": "High Risk?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "High Risk?": {
+            "main": [
+                [
+                    {
+                        "node": "Slack Alert",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Approve Payment",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+  },
+  {
+    "name": "Subscription Recovery",
+    "nodes": [
+        {
+            "name": "Stripe Failure",
+            "type": "n8n-nodes-base.webhook",
+            "position": [
+                250,
+                300
+            ]
+        },
+        {
+            "name": "Send Retry Email",
+            "type": "n8n-nodes-base.emailSend",
+            "position": [
+                500,
+                300
+            ]
+        },
+        {
+            "name": "Wait 24 Hours",
+            "type": "n8n-nodes-base.wait",
+            "position": [
+                750,
+                300
+            ],
+            "parameters": {
+                "amount": 24,
+                "unit": "hours"
+            }
+        },
+        {
+            "name": "Retry Payment",
+            "type": "n8n-nodes-base.httpRequest",
+            "position": [
+                1000,
+                300
+            ]
+        },
+        {
+            "name": "Success?",
+            "type": "n8n-nodes-base.if",
+            "position": [
+                1250,
+                300
+            ],
+            "parameters": {
+                "conditions": {
+                    "boolean": [
+                        {
+                            "value1": "={{$json.success}}"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Finance Alert",
+            "type": "n8n-nodes-base.slack",
+            "position": [
+                1500,
+                200
+            ]
+        },
+        {
+            "name": "Jira Ticket",
+            "type": "n8n-nodes-base.jira",
+            "position": [
+                1750,
+                200
+            ]
+        }
+    ],
+    "connections": {
+        "Stripe Failure": {
+            "main": [
+                [
+                    {
+                        "node": "Send Retry Email",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Send Retry Email": {
+            "main": [
+                [
+                    {
+                        "node": "Wait 24 Hours",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Wait 24 Hours": {
+            "main": [
+                [
+                    {
+                        "node": "Retry Payment",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Retry Payment": {
+            "main": [
+                [
+                    {
+                        "node": "Success?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Success?": {
+            "main": [
+                [
+                    {
+                        "node": "Finance Alert",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                []
+            ]
+        },
+        "Finance Alert": {
+            "main": [
+                [
+                    {
+                        "node": "Jira Ticket",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+  },
+  {
+    "name": "AWS Grafana Incident Response",
+    "nodes": [
+        {
+            "name": "Grafana Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "position": [
+                250,
+                300
+            ]
+        },
+        {
+            "name": "Severity Score",
+            "type": "n8n-nodes-base.function",
+            "position": [
+                500,
+                300
+            ],
+            "parameters": {
+                "functionCode": "const sev = $json.severity || 'warning'; return [{json:{...$json,severity:sev}}];"
+            }
+        },
+        {
+            "name": "Critical?",
+            "type": "n8n-nodes-base.if",
+            "position": [
+                750,
+                300
+            ],
+            "parameters": {
+                "conditions": {
+                    "string": [
+                        {
+                            "value1": "={{$json.severity}}",
+                            "operation": "equal",
+                            "value2": "critical"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "name": "PagerDuty",
+            "type": "n8n-nodes-base.httpRequest",
+            "position": [
+                1000,
+                180
+            ]
+        },
+        {
+            "name": "Jira Incident",
+            "type": "n8n-nodes-base.jira",
+            "position": [
+                1000,
+                300
+            ]
+        },
+        {
+            "name": "Slack Alert",
+            "type": "n8n-nodes-base.slack",
+            "position": [
+                1000,
+                450
+            ]
+        },
+        {
+            "name": "Incident Log",
+            "type": "n8n-nodes-base.postgres",
+            "position": [
+                1250,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "Grafana Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Severity Score",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Severity Score": {
+            "main": [
+                [
+                    {
+                        "node": "Critical?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Critical?": {
+            "main": [
+                [
+                    {
+                        "node": "PagerDuty",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Jira Incident",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Slack Alert",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Jira Incident": {
+            "main": [
+                [
+                    {
+                        "node": "Incident Log",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+  }
+]

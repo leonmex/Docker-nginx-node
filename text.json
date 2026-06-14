@@ -1,0 +1,116 @@
+{
+  "issues": [
+    {
+      "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+      "id": "10565",
+      "self": "https://huachicol-hero.atlassian.net/rest/api/3/issue/10565",
+      "key": "SBS-33",
+      "fields": {
+        "summary": "Verify the comments in the ticket from PO/PM",
+        "description": {
+          "type": "doc",
+          "version": 1,
+          "content": [
+            {
+              "type": "paragraph",
+              "content": [{ "type": "text", "text": "Description:" }]
+            },
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "The MCP need to have some process that is refreshing the information of the ticket that was change to the state "
+                },
+                {
+                  "type": "text",
+                  "text": "In Review",
+                  "marks": [{ "type": "strong" }]
+                },
+                {
+                  "type": "text",
+                  "text": " for the coment: MCP Proceed-Code-Review ones this comment us find in the ticket the MCP side-by-side need to proceed push the changes to the git repository and requested a code review"
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [{ "type": "text", "text": "Goal:" }]
+            },
+            {
+              "type": "bulletList",
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Add a process to verified the last ticke that the MCP update with the state "
+                        },
+                        {
+                          "type": "text",
+                          "text": "In Review ",
+                          "marks": [{ "type": "strong" }]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "This process need to check for the commen"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "paragraph",
+              "content": [{ "type": "text", "text": "QA:" }]
+            }
+          ]
+        },
+        "assignee": {
+          "self": "https://huachicol-hero.atlassian.net/rest/api/3/user?accountId=712020%3A474b8cb5-1e6b-4968-90e2-6a644f4d8396",
+          "accountId": "712020:474b8cb5-1e6b-4968-90e2-6a644f4d8396",
+          "avatarUrls": {
+            "48x48": "https://secure.gravatar.com/avatar/4aefdc06d801e2d046ee70fad540e468?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FD-4.png",
+            "24x24": "https://secure.gravatar.com/avatar/4aefdc06d801e2d046ee70fad540e468?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FD-4.png",
+            "16x16": "https://secure.gravatar.com/avatar/4aefdc06d801e2d046ee70fad540e468?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FD-4.png",
+            "32x32": "https://secure.gravatar.com/avatar/4aefdc06d801e2d046ee70fad540e468?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FD-4.png"
+          },
+          "displayName": "Dev2-AI",
+          "active": true,
+          "timeZone": "Europe/Berlin",
+          "accountType": "atlassian"
+        },
+        "status": {
+          "self": "https://huachicol-hero.atlassian.net/rest/api/3/status/10000",
+          "description": "",
+          "iconUrl": "https://huachicol-hero.atlassian.net/images/icons/statuses/generic.png",
+          "name": "To Do",
+          "id": "10000",
+          "statusCategory": {
+            "self": "https://huachicol-hero.atlassian.net/rest/api/3/statuscategory/2",
+            "id": 2,
+            "key": "new",
+            "colorName": "blue-gray",
+            "name": "To Do"
+          }
+        }
+      }
+    }
+  ],
+  "isLast": true
+}

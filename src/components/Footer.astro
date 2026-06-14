@@ -1,0 +1,74 @@
+---
+import { useTranslations } from '../i18n/utils';
+import profile from '../data/profile.json';
+
+interface Props {
+  currentLang: string;
+}
+
+const { currentLang } = Astro.props;
+const t = useTranslations(currentLang);
+---
+
+<footer class="footer-container">
+  <div class="container">
+    <div class="footer-grid-layout">
+      
+      <!-- Col 1: About -->
+      <div>
+        <a href={`/${currentLang}/`} class="footer-brand-logo">
+          <span class="footer-brand-logo-badge">NB</span>
+          <span>Noel Barrera</span>
+        </a>
+        <p class="body-sm footer-brand-text">
+          {t('footer.bio')}
+        </p>
+      </div>
+
+      <!-- Col 2: Navigation -->
+      <div>
+        <h4 class="caption-mono footer-column-title">{t('footer.navigation')}</h4>
+        <ul class="footer-links-list">
+          <li><a href="#experience" class="body-sm footer-link-item hover-dark">{t('nav.experience')}</a></li>
+          <li><a href="#projects" class="body-sm footer-link-item hover-dark">{t('nav.projects')}</a></li>
+          <li><a href="#about" class="body-sm footer-link-item hover-dark">{t('nav.about')}</a></li>
+          <li><a href="#contact" class="body-sm footer-link-item hover-dark">{t('nav.contact')}</a></li>
+        </ul>
+      </div>
+
+      <!-- Col 3: Initiatives -->
+      <div>
+        <h4 class="caption-mono footer-column-title">{t('footer.projects')}</h4>
+        <ul class="footer-links-list">
+          <li><a href="https://github.com/leonmex/FollowMeBackSolution" target="_blank" rel="noopener noreferrer" class="body-sm footer-link-item hover-dark">FollowMeBack</a></li>
+          <li><a href="https://github.com/leonmex" target="_blank" rel="noopener noreferrer" class="body-sm footer-link-item hover-dark">GitHub Initiatives</a></li>
+          <li><span class="body-sm">Side-by-Side MCP</span></li>
+        </ul>
+      </div>
+
+      <!-- Col 4: Certifications -->
+      <div>
+        <h4 class="caption-mono footer-column-title">{t('footer.certifications')}</h4>
+        <ul class="footer-links-list">
+          <li class="body-sm">Certified Kubernetes Administrator</li>
+          <li class="body-sm">MIT Management of Tech</li>
+        </ul>
+      </div>
+
+    </div>
+
+    <!-- Bottom Copyright -->
+    <div class="footer-bottom-row">
+      <span class="caption">{t('footer.copyright')}</span>
+      
+      <!-- Back to top -->
+      <a href="#" class="caption footer-back-to-top-link hover-dark">
+        <span>Back to top</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <line x1="12" y1="19" x2="12" y2="5"></line>
+          <polyline points="5 12 12 5 19 12"></polyline>
+        </svg>
+      </a>
+    </div>
+  </div>
+</footer>

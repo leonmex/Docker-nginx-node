@@ -1,0 +1,52 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+  lang: string;
+}
+
+const { title, description = "Noel Barrera Garcia - Senior Web Developer & Solutions Architect Portfolio", lang } = Astro.props;
+
+const currentPath = Astro.url.pathname;
+const pathWithoutLang = currentPath.replace(/^\/(en|de|fr|es)/, '') || '/';
+const cleanPathWithoutLang = pathWithoutLang.startsWith('/') ? pathWithoutLang : `/${pathWithoutLang}`;
+
+const supportedLocales = ['en', 'de', 'fr', 'es'];
+const siteUrl = Astro.url.origin;
+const canonicalUrl = `${siteUrl}/${lang}${cleanPathWithoutLang === '/' ? '' : cleanPathWithoutLang}`;
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    
+    <!-- Primary Meta Tags -->
+    <title>{title}</title>
+    <meta name="title" content={title} />
+    <meta name="description" content={description} />
+
+    <!-- Canonical & SEO Hreflang Tags -->
+    <link rel="canonical" href={canonicalUrl} />
+    {supportedLocales.map((locale) => (
+      <link 
+        rel="alternate" 
+        hreflang={locale} 
+        href={`${siteUrl}/${locale}${cleanPathWithoutLang === '/' ? '' : cleanPathWithoutLang}`} 
+      />
+    ))}
+    <link 
+      rel="alternate" 
+      hreflang="x-default" 
+      href={`${siteUrl}/en${cleanPathWithoutLang === '/' ? '' : cleanPathWithoutLang}`} 
+    />
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>
