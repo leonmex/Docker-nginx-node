@@ -12,6 +12,9 @@ export default defineConfig({
       redirectToDefaultLocale: true
     }
   },
+  devToolbar: {
+    enabled: false
+  },
   output: 'static',
   vite: {
     optimizeDeps: {

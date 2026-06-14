@@ -62,14 +62,14 @@ export default function ContactForm({ translations }: ContactFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="contact-form-container">
+    <form onSubmit={handleSubmit} className="contact-form-container" suppressHydrationWarning={true}>
       {error && (
         <div className="contact-form-alert-error">
           {error}
         </div>
       )}
       
-      <div>
+      <div suppressHydrationWarning={true}>
         <label htmlFor="name" className="body-sm-strong contact-form-label">
           {translations.name}
         </label>
@@ -81,11 +81,13 @@ export default function ContactForm({ translations }: ContactFormProps) {
           onChange={handleChange}
           className="form-input"
           placeholder="John Doe"
+          data-lpignore="true"
           required
+          suppressHydrationWarning={true}
         />
       </div>
 
-      <div>
+      <div suppressHydrationWarning={true}>
         <label htmlFor="email" className="body-sm-strong contact-form-label">
           {translations.email}
         </label>
@@ -97,11 +99,13 @@ export default function ContactForm({ translations }: ContactFormProps) {
           onChange={handleChange}
           className="form-input"
           placeholder="john@example.com"
+          data-lpignore="true"
           required
+          suppressHydrationWarning={true}
         />
       </div>
 
-      <div>
+      <div suppressHydrationWarning={true}>
         <label htmlFor="message" className="body-sm-strong contact-form-label">
           {translations.message}
         </label>
@@ -112,7 +116,9 @@ export default function ContactForm({ translations }: ContactFormProps) {
           onChange={handleChange}
           className="form-textarea"
           placeholder="How can I help you?"
+          data-lpignore="true"
           required
+          suppressHydrationWarning={true}
         />
       </div>
 
