@@ -1,0 +1,117 @@
+/* --- Experience Component --- */
+
+.experience-section {
+  background-color: var(--colors-canvas);
+  border-top: 1px solid var(--colors-hairline);
+}
+
+.experience-container {
+  max-width: 900px;
+}
+
+.experience-header {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.experience-eyebrow {
+  display: block;
+  margin-bottom: var(--spacing-xs);
+  color: var(--colors-violet);
+}
+
+.timeline-wrapper {
+  position: relative;
+  padding-left: 32px;
+}
+
+.timeline-wrapper::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background-color: var(--colors-hairline);
+  z-index: 1;
+}
+
+.timeline-item {
+  position: relative;
+  margin-bottom: 48px;
+}
+
+.timeline-dot {
+  position: absolute;
+  left: -41px;
+  top: 6px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background-color: var(--colors-canvas);
+  border: 2px solid var(--colors-hairline-strong);
+  z-index: 3;
+  transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.timeline-dot.active {
+  background-color: var(--colors-primary) !important;
+  border-color: var(--colors-primary) !important;
+  transform: scale(1.2);
+}
+
+.timeline-progress-line {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 2px;
+  height: 0%; /* Dynamic height calculated via JavaScript */
+  background: var(--colors-primary);
+  z-index: 2;
+  transition: height 0.1s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .timeline-progress-line {
+    transition: none !important;
+  }
+}
+
+.timeline-period-container {
+  margin-bottom: 8px;
+}
+
+.timeline-period-badge {
+  background-color: var(--colors-canvas-soft-2);
+  padding: 4px 8px;
+  border-radius: var(--rounded-xs);
+  font-size: 11px;
+}
+
+.timeline-job-role {
+  margin-bottom: 4px;
+}
+
+.timeline-job-company {
+  color: var(--colors-body);
+  margin-bottom: 16px;
+}
+
+.timeline-highlights-list {
+  list-style-type: none;
+  padding-left: 0;
+  margin-bottom: 0;
+}
+
+.timeline-highlight-item {
+  position: relative;
+  padding-left: var(--spacing-md);
+  margin-bottom: var(--spacing-xs);
+  line-height: 1.5;
+}
+
+.timeline-highlight-dash {
+  position: absolute;
+  left: 0;
+  color: var(--colors-hairline-strong);
+}

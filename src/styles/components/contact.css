@@ -1,0 +1,121 @@
+/* --- Contact Component --- */
+
+.contact-section {
+  background-color: var(--colors-canvas);
+  border-top: 1px solid var(--colors-hairline);
+  border-bottom: 1px solid var(--colors-hairline);
+}
+
+.contact-container {
+  max-width: 1000px;
+}
+
+.contact-main-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: var(--spacing-2xl);
+}
+
+@media (max-width: 767px) {
+  .contact-main-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.contact-eyebrow {
+  display: block;
+  margin-bottom: var(--spacing-xs);
+  color: var(--colors-primary);
+}
+
+.contact-title-text {
+  margin-bottom: var(--spacing-md);
+}
+
+.contact-subtitle-text {
+  margin-bottom: var(--spacing-xl);
+  max-width: 380px;
+}
+
+.contact-details-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.contact-details-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+}
+
+.contact-icon-svg {
+  color: var(--colors-hairline-strong);
+  margin-top: 2px;
+}
+
+.contact-detail-label {
+  font-size: 10px;
+  display: block;
+}
+
+.contact-detail-link {
+  color: var(--colors-ink);
+  text-decoration: none;
+}
+
+.contact-form-card-wrapper {
+  background-color: var(--colors-canvas);
+  padding: var(--spacing-xl);
+  box-shadow: var(--shadow-l4);
+}
+
+/* ContactForm.tsx */
+.contact-form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.contact-form-alert-error {
+  padding: 12px;
+  background-color: var(--colors-error-soft);
+  color: var(--colors-error-deep);
+  border-radius: var(--rounded-sm);
+  font-size: 14px;
+  border: 1px solid var(--colors-error);
+}
+
+.contact-form-success-card {
+  padding: 32px;
+  text-align: center;
+  background-color: var(--colors-canvas-soft-2);
+  border: 1px dashed var(--colors-success);
+  border-radius: var(--rounded-md);
+}
+
+.contact-form-success-icon {
+  margin-bottom: 16px;
+}
+
+.contact-form-success-btn {
+  margin-top: 20px;
+  cursor: pointer;
+}
+
+.contact-form-label {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.contact-form-submit-btn {
+  align-self: flex-start;
+  min-width: 160px;
+}
+
+@media (max-width: 480px) {
+  /* Form wrapper padding */
+  .contact-form-card-wrapper {
+    padding: var(--spacing-lg);
+  }
+}

@@ -33,5 +33,11 @@
   "footer.projects": "Projets Sélectionnés",
   "footer.certifications": "Certificats",
   "footer.bio": "Développeur web senior et architecte de solutions spécialisé dans les architectures distribuées, Kubernetes et les intégrations e-commerce.",
-  "footer.copyright": "© 2026 Noel Barrera Garcia. Tous droits réservés."
+  "footer.copyright": "© 2026 Noel Barrera Garcia. Tous droits réservés.",
+  "nav.recommendations": "Recommandations",
+  "recommendations.eyebrow": "Avis des pairs",
+  "recommendations.title": "Recommandations.",
+  "recommendations.subtitle": "Ce que mes collègues et partenaires disent de notre collaboration.",
+  "recommendations.next": "Suivant",
+  "recommendations.previous": "Précédent"
 }

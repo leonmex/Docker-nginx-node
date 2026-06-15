@@ -1,0 +1,39 @@
+---
+import RecommendationsGrid from './RecommendationsGrid.tsx';
+import recommendations from '../data/recommendations.json';
+import { useTranslations } from '../i18n/utils';
+
+interface Props {
+  currentLang: string;
+}
+
+const { currentLang } = Astro.props;
+const t = useTranslations(currentLang);
+
+const gridTranslations = {
+  next: t('recommendations.next'),
+  previous: t('recommendations.previous')
+};
+---
+
+<section id="recommendations" class="recommendations-section">
+  <div class="container">
+    <!-- Section Header -->
+    <div class="recommendations-header">
+      <span class="caption-mono recommendations-eyebrow">
+        {t('recommendations.eyebrow')}
+      </span>
+      <h2 class="display-lg">{t('recommendations.title')}</h2>
+      <p class="body-md recommendations-subtitle">
+        {t('recommendations.subtitle')}
+      </p>
+    </div>
+
+    <!-- Paginated Recommendations Grid -->
+    <RecommendationsGrid 
+      client:load 
+      recommendations={recommendations} 
+      translations={gridTranslations} 
+    />
+  </div>
+</section>

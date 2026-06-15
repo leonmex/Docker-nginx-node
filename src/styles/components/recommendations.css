@@ -1,0 +1,98 @@
+/* --- Recommendations Component --- */
+
+.recommendations-section {
+  border-top: 1px solid var(--colors-hairline);
+  background-color: var(--colors-canvas-soft-2);
+}
+
+.recommendations-header {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.recommendations-eyebrow {
+  display: block;
+  margin-bottom: var(--spacing-xs);
+  color: var(--colors-violet);
+}
+
+.recommendations-subtitle {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.recommendation-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 280px;
+}
+
+.recommendation-content {
+  margin-bottom: 24px;
+}
+
+.recommendation-quote-icon {
+  margin-bottom: 12px;
+  display: block;
+}
+
+.recommendation-text {
+  line-height: 1.6;
+}
+
+.recommendation-author-row {
+  border-top: 1px solid var(--colors-hairline);
+  padding-top: 12px;
+}
+
+.recommendation-author-name {
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+
+.recommendation-linkedin-link {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.2s ease, text-decoration 0.2s ease;
+}
+
+.recommendation-linkedin-link:hover {
+  color: var(--colors-violet);
+  text-decoration: underline;
+}
+
+.recommendation-author-role {
+  color: var(--colors-mute);
+  font-size: 11px;
+}
+
+.recommendations-pagination-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--spacing-lg);
+  margin-top: 40px;
+}
+
+.recommendations-page-indicator {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--colors-ink);
+}
+
+/* Page Turn Transition Animation (slide-in / fade-in) */
+@keyframes pageTurnIn {
+  from {
+    opacity: 0;
+    transform: translateX(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.recommendations-page-transition {
+  animation: pageTurnIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}

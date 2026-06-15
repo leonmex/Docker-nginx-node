@@ -193,4 +193,13 @@ All sections should be fully responsive, accessible, and follow the `DESIGN.md` 
   - Run npm commands inside the container if needed (e.g., `docker compose exec webapp npm install <package>`)
 - The final site must be buildable inside the container (`docker compose run webapp npm run build`) and run without errors.
 
+### 👥 Recommendations Section
+- **Interactivity**: Built with a React client-side island showing peer reviews.
+- **Desktop Grid Layout**: Displays recommendations in 3 columns per row, showing up to 2 rows at a time (total 6 recommendations per page).
+- **Mobile Responsive Layout**: On screens below 768px (mobile PWA mode), it displays only 2 recommendations per page (1 column x 2 rows) to keep screen estate clean.
+- **Controls**: Includes paginated controls (Next and Previous buttons) with disabled states when at the first or last page.
+- **Transitions**: Smooth page change sliding/fading animation effects.
+- **Data Source**: Uses data loaded from `src/data/recommendations.json`.
+- **LinkedIn Integration**: The `linkedinProfile` from the JSON file must be rendered as an `<a>` element wrapping the author's name (`{rec.name}`).
+
 Start by explaining your plan, then generate the code.
