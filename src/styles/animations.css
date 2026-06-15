@@ -1,0 +1,65 @@
+/* --- Scroll-triggered Animations & Transitions --- */
+
+/* Timeline Progress Line */
+.timeline-progress-line {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 2px;
+  height: 0%; /* Dynamic height calculated via JavaScript */
+  background: var(--colors-primary);
+  z-index: 2;
+  transition: height 0.1s ease-out;
+}
+
+/* Timeline Dot Transitions */
+.timeline-dot {
+  transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.timeline-dot.active {
+  background-color: var(--colors-primary) !important;
+  border-color: var(--colors-primary) !important;
+  transform: scale(1.2);
+}
+
+/* Skills Progress Bar Fill Transition */
+.about-skill-progress-fill {
+  width: 0%; /* Starts at 0% and updated on intersection */
+  transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1); /* Ultra smooth expo easeOut */
+}
+
+/* Entry Animations (Animate.css style fade-in-up) */
+.animate-on-scroll {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
+}
+
+.animate-on-scroll.animated {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Delay modifiers for sequential item entrance */
+.delay-1 { transition-delay: 0.1s; }
+.delay-2 { transition-delay: 0.2s; }
+.delay-3 { transition-delay: 0.3s; }
+.delay-4 { transition-delay: 0.4s; }
+.delay-5 { transition-delay: 0.5s; }
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .animate-on-scroll {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  .about-skill-progress-fill {
+    transition: none !important;
+  }
+  .timeline-progress-line {
+    transition: none !important;
+  }
+}

@@ -23,8 +23,9 @@ const t = useTranslations(currentLang);
 
     <!-- Timeline Wrapper -->
     <div class="timeline-wrapper">
-      {profile.experience.map((job) => (
-        <div class="timeline-item">
+      <div class="timeline-progress-line"></div>
+      {profile.experience.map((job, index) => (
+        <div class={`timeline-item animate-on-scroll delay-${(index % 5) + 1}`}>
           <!-- Bullet Point Indicator -->
           <div class="timeline-dot" />
           
@@ -55,3 +56,61 @@ const t = useTranslations(currentLang);
     </div>
   </div>
 </section>
+
+<script>
+  function initTimelineProgress() {
+    const wrapper = document.querySelector('.timeline-wrapper');
+    const progressLine = document.querySelector('.timeline-progress-line') as HTMLElement;
+    
+    if (!wrapper || !progressLine) return;
+
+    function updateProgress() {
+      if (!wrapper || !progressLine) return;
+      
+      const rect = wrapper.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      
+      // Trigger timeline line animation when the top of the wrapper enters the center/bottom of screen
+      const triggerPoint = viewportHeight * 0.7; 
+      const totalHeight = rect.height;
+      const relativeTop = rect.top;
+
+      let progress = 0;
+      if (relativeTop < triggerPoint) {
+        const scrolledDistance = triggerPoint - relativeTop;
+        progress = (scrolledDistance / totalHeight) * 100;
+      }
+
+      const clampedProgress = Math.min(Math.max(progress, 0), 100);
+      progressLine.style.height = `${clampedProgress}%`;
+
+      // Highlight timeline dots passed by the progress line
+      const items = wrapper.querySelectorAll('.timeline-item');
+      items.forEach((item) => {
+        const dot = item.querySelector('.timeline-dot');
+        if (dot) {
+          const dotRect = dot.getBoundingClientRect();
+          const dotTopInWrapper = dotRect.top - rect.top + (dotRect.height / 2);
+          const progressHeight = (clampedProgress / 100) * totalHeight;
+
+          if (dotTopInWrapper <= progressHeight) {
+            dot.classList.add('active');
+          } else {
+            dot.classList.remove('active');
+          }
+        }
+      });
+    }
+
+    // Scroll & Resize listeners
+    window.addEventListener('scroll', updateProgress, { passive: true });
+    window.addEventListener('resize', updateProgress, { passive: true });
+    
+    // Initial calculation
+    updateProgress();
+  }
+
+  // Bind init function
+  initTimelineProgress();
+  document.addEventListener('astro:page-load', initTimelineProgress);
+</script>

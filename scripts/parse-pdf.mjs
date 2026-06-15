@@ -9,7 +9,7 @@ const jsonOutputPath = path.resolve('src/data/profile.json');
 
 async function parsePdf() {
   console.log('Starting PDF extraction...');
-  
+
   let selectedPath = pdfPath;
   if (!fs.existsSync(selectedPath)) {
     if (fs.existsSync(fallbackPdfPath)) {
@@ -52,7 +52,7 @@ function structureResume(text) {
     name: "Noel Barrera García",
     title: "Senior Web Developer / Solutions Architect",
     contact: {
-      address: "Talstrasse. 3A, 13189 Berlin, Germany",
+      address: "Berlin, Germany",
       phone: "+49 15735723508",
       email: "nbgsys@hotmail.com",
       github: "https://github.com/leonmex",
@@ -228,8 +228,8 @@ function structureResume(text) {
 
   // 8. E-commerce Projects
   profile.ecommerceProjects = [
-    "tink.de", "dyh.com", "italiadesigns.com", "bauhausitalia.com", 
-    "cafe-royal.com", "roomox.com", "coffeecircle.de", "monoqi.com", 
+    "tink.de", "dyh.com", "italiadesigns.com", "bauhausitalia.com",
+    "cafe-royal.com", "roomox.com", "coffeecircle.de", "monoqi.com",
     "sancarlos.es", "bimbaylola.com", "ufshoes.com"
   ];
 

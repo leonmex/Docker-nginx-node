@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap');
+@import './animations.css';
 
 /* --- Design Tokens --- */
 :root {
@@ -624,7 +625,16 @@ section {
 .timeline-wrapper {
   position: relative;
   padding-left: 32px;
-  border-left: 2px solid var(--colors-hairline);
+}
+.timeline-wrapper::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background-color: var(--colors-hairline);
+  z-index: 1;
 }
 .timeline-item {
   position: relative;
@@ -639,11 +649,9 @@ section {
   border-radius: 50%;
   background-color: var(--colors-canvas);
   border: 2px solid var(--colors-hairline-strong);
-  z-index: 2;
+  z-index: 3;
 }
-.timeline-item:first-child .timeline-dot {
-  background-color: var(--colors-primary);
-}
+
 .timeline-period-container {
   margin-bottom: 8px;
 }

@@ -89,3 +89,20 @@ During development and environment setup, the following issues were resolved to 
   * Added CSS overrides to scale displays, collapse column grids to 1-column layouts, stack CTA buttons, and adjust margins/paddings.
 * **Location:** [Header.astro](file:///Users/nbarrera/projects/Docker/node-nginx-clean/src/components/Header.astro) and [global.css](file:///Users/nbarrera/projects/Docker/node-nginx-clean/src/styles/global.css#L1213-L1365).
 
+### 7. Interactive Timeline & Skills Progress Animations
+* **Requirement:** Add dynamic scrolling effects and responsive entrance animations to make the Career Timeline and Skills & Tech Stack sections feel premium.
+* **Fix:**
+  * Created a dedicated [animations.css](file:///Users/nbarrera/projects/Docker/node-nginx-clean/src/styles/animations.css) stylesheet to isolate animation rules, keyframes, transitions, and staggered delay classes.
+  * Replaced static timeline vertical lines in [global.css](file:///Users/nbarrera/projects/Docker/node-nginx-clean/src/styles/global.css) with a background track and a `.timeline-progress-line` that calculates scroll percentage dynamically in [Experience.astro](file:///Users/nbarrera/projects/Docker/node-nginx-clean/src/components/Experience.astro) and fills down the timeline, lighting up dots as they are reached.
+  * Integrated an `IntersectionObserver` in [About.astro](file:///Users/nbarrera/projects/Docker/node-nginx-clean/src/components/About.astro) that detects when the Skills grid is reached, dynamically filling rating bars from `0%` to their max rating widths.
+  * Set up a global IntersectionObserver in [Layout.astro](file:///Users/nbarrera/projects/Docker/node-nginx-clean/src/layouts/Layout.astro) to trigger fade-in-up animations for any elements marked with `.animate-on-scroll`.
+
+## Next Steps
+
+1. **Local Nginx Routing Validation**: Verify the static production builds (`dist/`) inside the Nginx proxy container container (`proxy` service) using the configured subdomains.
+2. **Additional Animation Enhancements**:
+   - Add hover micro-interactions to project cards and n8n node visualizer pills.
+   - Set up custom slide-out transitions for the mobile navigation drawer when toggling it closed.
+3. **Continuous Deployment Setup**: Integrate automatic static site generation (SSG) deployment pipelines to platforms like Vercel or Cloudflare Pages.
+
+

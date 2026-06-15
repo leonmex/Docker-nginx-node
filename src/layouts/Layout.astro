@@ -48,5 +48,29 @@ const canonicalUrl = `${siteUrl}/${lang}${cleanPathWithoutLang === '/' ? '' : cl
   </head>
   <body>
     <slot />
+    <script>
+      function initScrollAnimations() {
+        const observerOptions = {
+          threshold: 0.1,
+          rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries, obs) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('animated');
+              obs.unobserve(entry.target);
+            }
+          });
+        }, observerOptions);
+
+        document.querySelectorAll('.animate-on-scroll').forEach(el => {
+          observer.observe(el);
+        });
+      }
+
+      initScrollAnimations();
+      document.addEventListener('astro:page-load', initScrollAnimations);
+    </script>
   </body>
 </html>

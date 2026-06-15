@@ -82,10 +82,10 @@ const skillCategories = [
     <h3 class="display-md about-skills-title">{t('about.skills')}</h3>
     
     <div class="about-skills-grid">
-      {skillCategories.map((cat) => {
+      {skillCategories.map((cat, idx) => {
         const skillsList = (profile.skills as any)[cat.key] || [];
         return (
-          <div class="card-marketing about-skill-category-card">
+          <div class={`card-marketing about-skill-category-card animate-on-scroll delay-${idx + 1}`}>
             <h4 class="caption-mono about-skill-category-title" style={{ color: cat.color }}>
               {cat.title}
             </h4>
@@ -101,8 +101,9 @@ const skillCategories = [
                   <div class="about-skill-progress-container">
                     <div 
                       class="about-skill-progress-fill"
+                      data-target-width={`${skill.rating * 10}%`}
                       style={{
-                        width: `${skill.rating * 10}%`,
+                        width: '0%',
                         backgroundColor: cat.color
                       }}
                     />
@@ -126,3 +127,31 @@ const skillCategories = [
     </div>
   </div>
 </section>
+
+<script>
+  function initSkillsObserver() {
+    const grid = document.querySelector('.about-skills-grid');
+    if (!grid) return;
+
+    const fills = grid.querySelectorAll('.about-skill-progress-fill');
+    
+    const observer = new IntersectionObserver((entries, obs) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          fills.forEach((fill: any) => {
+            const targetWidth = fill.getAttribute('data-target-width');
+            if (targetWidth) {
+              fill.style.width = targetWidth;
+            }
+          });
+          obs.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15 });
+
+    observer.observe(grid);
+  }
+
+  initSkillsObserver();
+  document.addEventListener('astro:page-load', initSkillsObserver);
+</script>
