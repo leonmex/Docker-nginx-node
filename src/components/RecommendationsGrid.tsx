@@ -77,10 +77,10 @@ export default function RecommendationsGrid({ recommendations, translations }: R
             <div className="recommendation-author-row">
               <h4 className="body-md-strong recommendation-author-name">
                 {rec.linkedinProfile ? (
-                  <a 
-                    href={rec.linkedinProfile} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
+                  <a
+                    href="#"
+                    data-href={btoa(rec.linkedinProfile)}
+                    onClick={(e) => { e.preventDefault(); window.open(atob(e.currentTarget.dataset.href!), '_blank'); }}
                     className="recommendation-linkedin-link"
                   >
                     {rec.name}

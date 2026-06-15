@@ -108,10 +108,10 @@ export default function ProjectGrid({ personalProjects, n8nProjects, translation
             <div>
               {project.type === 'personal' ? (
                 project.url ? (
-                  <a 
-                    href={project.url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
+                  <a
+                    href="#"
+                    data-href={btoa(project.url)}
+                    onClick={(e) => { e.preventDefault(); window.open(atob(e.currentTarget.dataset.href!), '_blank'); }}
                     className="btn btn-secondary-sm project-card-action-btn"
                   >
                     View Source (GitHub)

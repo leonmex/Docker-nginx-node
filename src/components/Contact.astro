@@ -10,6 +10,12 @@ interface Props {
 const { currentLang } = Astro.props;
 const t = useTranslations(currentLang);
 
+// Anti-scraping: encode contact data so raw values never appear in the HTML source
+const encodedEmail = btoa(profile.contact.email);
+const reversedEmail = profile.contact.email.split('').reverse().join('');
+const encodedLinkedin = btoa(profile.contact.linkedin);
+const encodedGithub = btoa(profile.contact.github);
+
 const formTranslations = {
   name: t('contact.form.name'),
   email: t('contact.form.email'),
@@ -44,8 +50,8 @@ const formTranslations = {
             </svg>
             <div>
               <span class="caption-mono contact-detail-label">Email</span>
-              <a href={`mailto:${profile.contact.email}`} class="body-sm-strong contact-detail-link hover-underline">
-                {profile.contact.email}
+              <a href="#" data-email={encodedEmail} onclick="this.href='mailto:'+atob(this.dataset.email)" class="body-sm-strong contact-detail-link hover-underline">
+                <span style="unicode-bidi: bidi-override; direction: rtl;">{reversedEmail}</span>
               </a>
             </div>
           </div>
@@ -56,7 +62,7 @@ const formTranslations = {
   <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451c.979 0 1.771-.773 1.771-1.729V1.729C24 .774 23.201 0 22.225 0z"/>
 </svg>            <div>
               <span class="caption-mono contact-detail-label">Linkedin</span>
-              <a href={profile.contact.linkedin} target="_blank" rel="noopener noreferrer" class="body-sm-strong contact-detail-link hover-underline">
+              <a href="#" data-href={encodedLinkedin} onclick="(function(el){ window.open(atob(el.dataset.href), '_blank'); })(this)" class="body-sm-strong contact-detail-link hover-underline">
                 linkedin.com/in/noelbarrera
               </a>
 
@@ -82,7 +88,7 @@ const formTranslations = {
             </svg>
             <div>
               <span class="caption-mono contact-detail-label">Github</span>
-              <a href={profile.contact.github} target="_blank" rel="noopener noreferrer" class="body-sm-strong contact-detail-link hover-underline">
+              <a href="#" data-href={encodedGithub} onclick="(function(el){ window.open(atob(el.dataset.href), '_blank'); })(this)" class="body-sm-strong contact-detail-link hover-underline">
                 github.com/leonmex
               </a>
             </div>
