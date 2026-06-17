@@ -6,7 +6,7 @@
   "hero.badge": "Developer Portfolio",
   "hero.cta.primary": "View Projects",
   "hero.cta.secondary": "Contact Me",
-  "hero.bio": "With over 20 years of experience in the IT industry, I have gained a deep understanding of various aspects, ranging from the early days of 4GL languages to the latest frameworks for PHP, Java, Node.js, Angular, and APIs. I have successfully designed and implemented architectural solutions leveraging Kubernetes to ensure scalable, reliable, and efficient deployments.",
+  "hero.bio": "I lead engineering teams by translating 20 years of experience into clear guidance. My focus is on creating a collaborative environment where we work as a single unit to solve problems and hit business targets. Together, we build the scalable, high-quality products that drive our organization’s success.",
   "projects.title": "Featured work.",
   "projects.subtitle": "A collection of web development projects and n8n automation workflows.",
   "projects.filter.all": "All",

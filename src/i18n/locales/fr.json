@@ -6,7 +6,7 @@
   "hero.badge": "Portfolio du Développeur",
   "hero.cta.primary": "Voir les Projets",
   "hero.cta.secondary": "Me Contacter",
-  "hero.bio": "Avec plus de 20 ans d'expérience dans le secteur informatique, j'ai acquis une compréhension approfondie de divers aspects, allant des débuts des langages 4GL aux derniers frameworks pour PHP, Java, Node.js, Angular et les API. J'ai conçu et mis en œuvre avec succès des solutions architecturales exploitant Kubernetes pour garantir des déploiements évolutifs, fiables et efficaces.",
+  "hero.bio": "Je dirige des équipes d'ingénierie en traduisant 20 ans d'expérience en conseils et directives clairs. Mon objectif est de créer un environnement collaboratif où nous travaillons comme une seule unité pour résoudre les problèmes et atteindre les objectifs commerciaux. Ensemble, nous construisons des produits évolutifs et de haute qualité qui favorisent le succès de notre organisation.",
   "projects.title": "Travaux présentés.",
   "projects.subtitle": "Une collection de projets de développement web et de flux de travail d'automatisation n8n.",
   "projects.filter.all": "Tout",

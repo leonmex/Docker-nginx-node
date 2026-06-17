@@ -63,7 +63,13 @@
       "degree": "BA in Administrative Computer Science",
       "institution": "Universidad Tecnológica - UNITEC",
       "location": "Mexico City",
-      "year": "1994"
+      "year": "1994 - 1999"
+    },
+    {
+      "degree": "MBA - Master in Digital Transformation",
+      "institution": "ULB - Université Libre de Bruxelles)",
+      "location": "Bruxelles, Belgium",
+      "year": "2001 - 2002"
     }
   ],
   "skills": {
@@ -132,7 +138,7 @@
       },
       {
         "name": "Angular",
-        "rating": 8
+        "rating": 7
       },
       {
         "name": "Dart",

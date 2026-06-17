@@ -84,6 +84,7 @@ export default function ContactForm({ translations }: ContactFormProps) {
           data-lpignore="true"
           required
           suppressHydrationWarning={true}
+          autoComplete="name"
         />
       </div>
 
@@ -102,6 +103,7 @@ export default function ContactForm({ translations }: ContactFormProps) {
           data-lpignore="true"
           required
           suppressHydrationWarning={true}
+          autoComplete="email"
         />
       </div>
 
