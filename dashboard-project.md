@@ -36,3 +36,28 @@ Ensure the folder structure remains intact
 
 ### HINT YOU CAN USE /Users/nbarrera/projects/Docker/node-nginx-clean/dashboard/AGENTS.md
 ### AFTER execute and made run the dashboard read the /Users/nbarrera/projects/Docker/node-nginx-clean/dashboard/CLAUDE.md
+
+---
+
+### Phase 4: Backend & Database (Database-First Step)
+
+Replaces the dashboard mock data with **PostgreSQL + a Fastify v5.8 TypeScript API**
+in `server/`. Full agent spec: [`CLAUDE-DATABASE-FIRST-STEP.md`](./CLAUDE-DATABASE-FIRST-STEP.md).
+Live progress, endpoint checklist, and **production trade-offs**:
+[`migration_progress.md`](./migration_progress.md).
+
+**Done (Milestone 1):**
+- PostgreSQL `18.4` + Redis added to `docker-compose.yml`; new container-first `server` service.
+- Relational schema (`server/db/schema.sql`) mapping the mocks: `users`, `user_tags`, `dashboard_notices`, `fake_list`.
+- Seed script (`server/db/seed.ts`) extracting mock data into the DB with bcrypt-hashed passwords.
+- Senior abstractions: read/write-splitting connection manager (`server/src/core/`) with `withTransaction` / `withoutTransaction`.
+- 14 passing tests (`docker compose run --rm server npm test`).
+
+**Pending:** repositories + cache-aside (Redis), the five `/api/*` Fastify endpoints,
+nginx `/api/` → `server:5000` proxy, and disabling the Umi mocks. See `migration_progress.md`.
+
+> **Container-first:** never run `npm install`/tests on the host. Use
+> `docker compose run --rm server npm run <db:check|db:seed|test>`.
+
+> **EN/DE/ES constraint reminder:** the seeded mock content is still zh-CN — it must
+> be localized/replaced before release (tracked as a trade-off in `migration_progress.md`).

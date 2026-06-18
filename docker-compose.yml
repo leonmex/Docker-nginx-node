@@ -41,9 +41,10 @@ services:
        - node_network
 
    dbPostgres:
-     image: postgres:latest
+     image: postgres:18.4
+     # Bound to loopback only — not exposed on external interfaces (security rule).
      ports:
-       - 5432:5432
+       - 127.0.0.1:5432:5432
      restart: unless-stopped
      volumes:
        - postgres-data:/var/lib/postgresql:rw
@@ -52,6 +53,40 @@ services:
        - POSTGRES_USER=${POSTGRES_USER}
        - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
        - POSTGRES_DB=${POSTGRES_DB}
+     networks:
+       - node_network
+
+   redis:
+     image: redis:7-alpine
+     restart: unless-stopped
+     # Loopback-only host binding; reachable as redis://redis:6379 inside the network.
+     ports:
+       - 127.0.0.1:6379:6379
+     volumes:
+       - redis-data:/data
+     networks:
+       - node_network
+
+   server:
+     image: node:22-alpine
+     working_dir: /usr/src/server
+     restart: unless-stopped
+     env_file:
+       - ./.env
+     environment:
+       - NODE_ENV=development
+       - DB_HOST=dbPostgres
+       - DB_PORT=5432
+       - REDIS_HOST=redis
+       - REDIS_PORT=6379
+     # Runtime install (mirrors webapp). No HTTP server yet (Milestone 2) — idle after install.
+     command: sh -c "npm install --ignore-scripts && tail -f /dev/null"
+     volumes:
+       - ./server:/usr/src/server
+       - server_node_modules:/usr/src/server/node_modules
+     depends_on:
+       - dbPostgres
+       - redis
      networks:
        - node_network
 
@@ -130,5 +165,7 @@ networks:
 
 volumes:
   postgres-data:
+  redis-data:
   webapp_node_modules:
+  server_node_modules:
   # elasticsearch-data:
