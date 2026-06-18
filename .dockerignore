@@ -1,0 +1,7 @@
+**/node_modules
+**/.git
+**/dist
+**/.umi
+**/.umi-production
+dashboard/src/.umi
+.env

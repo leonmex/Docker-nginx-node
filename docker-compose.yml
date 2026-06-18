@@ -3,21 +3,24 @@ services:
    webapp:
      container_name: webapp
      build:
-       context: ${APP_ROUTE}
+       context: .
        dockerfile: Dockerfile
        target: webapp
        args:
-         APP_ROUTE: .
+         APP_ROUTE: ${APP_ROUTE:-./dashboard}
      environment:
        - NGINX_HOST=webapp
        - NGINX_PORT=4321
        - NODE_ENV=development
+       - PORT=3000
+       - HOST=0.0.0.0
      ports:
        - 9229:9229
      restart: unless-stopped
+     command: sh -c "npm install --ignore-scripts && npm run start"
      volumes:
-       - ${APP_ROUTE}:/usr/src/app
-       - /usr/src/app/node_modules
+       - ${APP_ROUTE:-./dashboard}:/usr/src/app
+       - webapp_node_modules:/usr/src/app/node_modules
      networks:
        - node_network
 
@@ -127,4 +130,5 @@ networks:
 
 volumes:
   postgres-data:
+  webapp_node_modules:
   # elasticsearch-data:
