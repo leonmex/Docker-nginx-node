@@ -48,6 +48,52 @@ A clean and modular Docker environment for Node.js applications served with Ngin
 - **dbPostgres**: PostgreSQL database.
 - _(Optional/Commented)_: Elasticsearch, GraphQL, TypeScript services.
 
+## Database & Cache Administration
+
+The backend application caches data (like user profiles and tags) in Redis to improve performance. If you modify PostgreSQL tables directly (e.g., updating the `user_tags` table), the dashboard might not update immediately due to caching (cached under `user:profile:<userid>` keys for 60 seconds).
+
+Use the following commands to manage the database and cache.
+
+### 1. Redis Cache Commands
+* **Flush the entire cache**:
+  ```bash
+  docker compose exec redis redis-cli flushall
+  ```
+  *(Note: You can also use `flushdb` instead of `flushall` to clear only the current active database).*
+
+* **Delete a specific cached user profile**:
+  ```bash
+  # Delete cache for a specific user ID (e.g., admin is '00000001')
+  docker compose exec redis redis-cli del user:profile:00000001
+  ```
+
+### 2. Database Resets & Seeding
+* **Reset and Seed the database**:
+  This command will drop all existing data and re-apply the schema and seed data (re-creating default admin and user profiles).
+  ```bash
+  docker compose exec server npm run db:seed
+  ```
+  *Default Seeded Users:*
+  - **Admin**: `admin` / `ant.design` (User ID: `00000001`)
+  - **User**: `user` / `ant.design` (User ID: `00000002`)
+
+* **Verify database & cache connectivity**:
+  ```bash
+  docker compose exec server npm run db:check
+  ```
+
+### 3. Direct Database Access
+* **Access the PostgreSQL CLI**:
+  ```bash
+  docker compose exec dbPostgres psql -U postgres -d test
+  ```
+  *(Note: Adjust the `-U` and `-d` flags if you have changed the defaults in your `.env` file).*
+
+* **Run a single SQL query directly**:
+  ```bash
+  docker compose exec dbPostgres psql -U postgres -d test -c "SELECT * FROM user_tags;"
+  ```
+
 ## Notes
 
 - The containers are configured to keep running (`tail -f /dev/null`) to allow for easy debugging and manual command execution inside the containers.
