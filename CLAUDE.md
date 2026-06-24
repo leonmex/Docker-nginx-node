@@ -7,6 +7,9 @@ This project has two Docker workflows:
 
 The dashboard is Ant Design Pro (Umi Max v4 / antd v6), restricted to **en-US**, **de-DE**, **es-ES**.
 
+- **Learnings & Skills Log**: Before starting any task, read `.claude/learned_lessons.md` to avoid repeating past errors. Update the log with new resolutions or techniques.
+- **Comments & Docs**: All new code, schema tables, and routes must be fully documented and commented in English.
+
 ## Development — Key Architecture Decisions
 
 1.  **Fast Builds (No build-time `npm install`)**:
@@ -44,6 +47,25 @@ The dashboard is Ant Design Pro (Umi Max v4 / antd v6), restricted to **en-US**,
 *   **Web Dashboard**: `http://localhost:3000` (runs Umi dev server with mock data)
 *   **Nginx Proxy**: `http://localhost:80` (or `HOST_HTTP_PORT`)
 *   **Database (PostgreSQL)**: `localhost:5432`
+
+### Database & Cache Administration
+
+*   **Flush Redis Cache**:
+    ```bash
+    docker compose exec redis redis-cli flushall
+    ```
+*   **Reset & Seed Database**:
+    ```bash
+    docker compose exec server npm run db:seed
+    ```
+*   **Check Database & Cache Connections**:
+    ```bash
+    docker compose exec server npm run db:check
+    ```
+*   **Access PostgreSQL CLI**:
+    ```bash
+    docker compose exec dbPostgres psql -U postgres -d test
+    ```
 
 ## Production Deployment
 

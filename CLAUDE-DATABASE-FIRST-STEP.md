@@ -23,6 +23,8 @@ Currently, the React/UmiJS dashboard relies on hardcoded Chinese-language mock d
 *   **Frontend**: React (Umi Max v4 / Ant Design Pro) located in `dashboard/`.
 *   **Orchestration**: Docker Compose, using Nginx to reverse-proxy the services.
 *   **Security & Linters**: Strict Biome linting and TypeScript guidelines. No ESLint, no Prettier.
+*   **Observability**: Structured logging via `pino` (JSON logs) behind an `ILogger` abstraction, designed to scale into an **OpenTelemetry** pipeline (traces/metrics/logs) later. No `console.log` in application code.
+*   **No emojis**: Do not use emojis anywhere — not in docs, code, comments, log messages, or commit messages. Use plain-text status markers (Done / Pending / [x] / [ ]).
 
 ---
 
@@ -48,6 +50,12 @@ To ensure the backend is secure, scalable, and maintainable, you must implement 
     *   On a **Write Request**: Write to the PostgreSQL Master, then invalidate/remove the corresponding cache keys in Redis.
 *   **Flexibility**: The system must be configurable via environment variables (`USE_CACHE=true`, `CACHE_PROVIDER=redis`) and degrade gracefully if Redis is unavailable (falling back directly to database queries).
 
+### D. Observability & Structured Logging
+*   **Vendor-Agnostic Logger Abstraction**: Define an `ILogger` interface (`debug`, `info`, `warn`, `error`, `child`). Application code depends on `ILogger`, never on `console` or a concrete logger — so the observability backend (OpenTelemetry collector, Datadog, Grafana/Loki, plain stdout, …) can be swapped without touching business code.
+*   **Structured JSON by Default**: Implement it with `pino` — JSON logs carrying a stable schema (`service`, `level`, `time`, `msg`, plus contextual fields: request id, user id, cache hit/miss, db role). Pretty-print only in development. A consistent JSON contract is what lets any collector ingest the logs.
+*   **Pluggable Transport / Extension Point**: Keep output behind a transport seam (the concrete logger config), so a destination — vendor exporter, log shipper, file, stdout — can be added later without changing call sites.
+*   **Correlation-Ready**: The logger must support `child()` bindings so per-request correlation context (request id, and later trace/span ids from whichever tracing system is chosen) can be attached. The Fastify server uses the same `pino` instance so every HTTP request/response is logged with a correlation id.
+
 ---
 
 ## 4. Strict Step-by-Step Execution & Testing Policy
@@ -72,6 +80,11 @@ To maximize token efficiency and prevent compilation/debugging loops, you must s
 3.  **Step 3**: Implement the database queries (DDL, seed script) and run database repository tests against a real/mocked Postgres instance.
 4.  **Step 4**: Implement caching decorators and verify cache hit/miss behavior (with mocked Redis client).
 5.  **Step 5**: Register routes in Fastify plugins and run API endpoint validation tests (using `fastify.inject` or equivalent).
+
+### D. Observability Coverage (All Milestones)
+*   **Every milestone must ship with basic observability** — structured logs through the `ILogger` abstraction (Section 3D), no `console.*` in application code.
+*   Log the meaningful events per layer: startup/shutdown and config (sanitized), DB connectivity and which role (master/replica) served a query, cache hit/miss and degradation, request/response with a correlation id, and errors with stack context.
+*   New modules added in a milestone are not "done" until their key paths emit logs and the logger remains swappable (no vendor lock-in).
 
 ---
 
@@ -160,9 +173,11 @@ Provide the following directory structure:
 │   ├── src/
 │   │   ├── index.ts        # Server entrypoint and Fastify config
 │   │   ├── config.ts       # Env configuration
-│   │   ├── core/           # Interfaces & database connections
+│   │   ├── core/           # Interfaces, connections, cache & logging
 │   │   │   ├── IDatabase.ts
-│   │   │   └── ICache.ts
+│   │   │   ├── ICache.ts
+│   │   │   ├── ILogger.ts   # Vendor-agnostic logging interface
+│   │   │   └── logger.ts    # pino implementation + factory
 │   │   ├── repositories/   # Abstracted repositories
 │   │   ├── routes/         # Fastify route plugins
 │   │   └── plugins/        # Custom Fastify plugins
