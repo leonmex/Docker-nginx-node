@@ -1,0 +1,12 @@
+{
+    "name": "personal-web",
+    "compatibility_date": "2026-06-29",
+    "compatibility_flags": [
+        "nodejs_compat"
+    ],
+    "main": "./dist/_worker.js",
+    "assets": {
+        "directory": "./dist",
+        "not_found_handling": "single-page-application"
+    }
+}
