@@ -1,12 +1,12 @@
 {
-    "name": "personal-web",
+    // Cloudflare Workers Static Assets deployment for a pre-rendered (output: "static") Astro site.
+    // No "main" / Worker script: this is an assets-only Worker that serves the built ./dist directory.
+    "name": "nbarrera-personal-web",
     "compatibility_date": "2026-06-29",
-    "compatibility_flags": [
-        "nodejs_compat"
-    ],
-    "main": "./dist/_worker.js",
     "assets": {
         "directory": "./dist",
-        "not_found_handling": "single-page-application"
+        // Multi-page static site: serve ./dist/404.html on unknown paths if it exists,
+        // otherwise Cloudflare returns its default 404. (Add src/pages/404.astro to customize.)
+        "not_found_handling": "404-page"
     }
 }

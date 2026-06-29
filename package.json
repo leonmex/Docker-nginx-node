@@ -8,10 +8,13 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "parse-pdf": "node scripts/parse-pdf.mjs"
+    "parse-pdf": "node scripts/parse-pdf.mjs",
+    "cf:login": "wrangler login",
+    "cf:deploy": "astro build && wrangler deploy",
+    "cf:preview": "astro build && wrangler dev"
   },
   "dependencies": {
-    "@astrojs/react": "^4.2.0",
+    "@astrojs/react": "^5.0.7",
     "astro": "^6.0.0",
     "pdf-parse": "^1.1.1",
     "react": "^19.0.0",
@@ -20,6 +23,7 @@
   "devDependencies": {
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "wrangler": "^4.105.0"
   }
 }

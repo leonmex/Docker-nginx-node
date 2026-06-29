@@ -68,6 +68,10 @@ typings/
 .nuxt
 dist
 
+# Cloudflare Wrangler local state/cache
+.wrangler/
+.dev.vars
+
 # Gatsby files
 .cache/
 public
