@@ -3,6 +3,7 @@
   "title": "Senior Web Developer / Solutions Architect",
   "contact": {
     "address": "Berlin, Germany",
+    "phone": "+49 15735723508",
     "email": "nbgsys@hotmail.com",
     "github": "https://github.com/leonmex",
     "linkedin": "https://linkedin.com/in/noelbarrera"
@@ -63,13 +64,7 @@
       "degree": "BA in Administrative Computer Science",
       "institution": "Universidad Tecnológica - UNITEC",
       "location": "Mexico City",
-      "year": "1994 - 1999"
-    },
-    {
-      "degree": "MBA - Master in Digital Transformation",
-      "institution": "ULB - Université Libre de Bruxelles)",
-      "location": "Bruxelles, Belgium",
-      "year": "2001 - 2002"
+      "year": "1994"
     }
   ],
   "skills": {
@@ -138,7 +133,7 @@
       },
       {
         "name": "Angular",
-        "rating": 7
+        "rating": 8
       },
       {
         "name": "Dart",
@@ -209,8 +204,7 @@
   "personalProjects": [
     {
       "name": "Huachico-Hero Game",
-      "description": "A mobile game published on Google Play.",
-      "url": "https://www.huachicol-hero.com/"
+      "description": "A mobile game published on Google Play."
     },
     {
       "name": "FollowMeBackSolution",
@@ -219,51 +213,21 @@
     },
     {
       "name": "TURN/webRTC Server",
-      "description": "A high-performance TURN/webRTC server for geolocation applications developed in Golang.",
-      "url": "https://github.com/leonmex/Server-Turn-ICE"
+      "description": "A high-performance TURN/webRTC server for geolocation applications developed in Golang."
     },
     {
       "name": "Side-by-Side MCP Server",
-      "description": "An AI-agent tool powered by Model Context Protocol (MCP) and Docker that integrates with Jira to read tickets, apply and validate code changes, and transition tickets.",
-      "url": "https://github.com/leonmex/mcp-side-by-side"
+      "description": "An AI-agent tool powered by Model Context Protocol (MCP) and Docker that integrates with Jira to read tickets, apply and validate code changes, and transition tickets."
     }
   ],
   "certifications": [
     {
-      "name": "Data Streaming Engineer - Apache Flink",
-      "issuer": "Confluent",
-      "date": "May 2026"
+      "name": "Certified Kubernetes Administrator (CKA)",
+      "date": "02.06.2023"
     },
     {
-      "name": "Snowflake University Platform Skills Badge",
-      "issuer": "Snowflake",
-      "date": "May 2026",
-      "credentialId": "182926837"
-    },
-    {
-      "name": "Data Streaming Engineer",
-      "issuer": "Confluent",
-      "date": "Dec 2025"
-    },
-    {
-      "name": "Management of Technology",
-      "issuer": "MIT Sloan School of Management",
-      "date": "Jul 2025"
-    },
-    {
-      "name": "Certified Kubernetes Administrator",
-      "issuer": "The Linux Foundation",
-      "date": "Jun 2023"
-    },
-    {
-      "name": "Doctrine, Symfony & the Database",
-      "issuer": "SymfonyCasts",
-      "date": "Jan 2022"
-    },
-    {
-      "name": "Symfony 5 Fundamentals: Services, Config & Environments",
-      "issuer": "SymfonyCasts",
-      "date": "Dec 2021"
+      "name": "MIT - Management of Technology",
+      "date": "07.07.2025"
     }
   ],
   "languages": [
@@ -295,7 +259,6 @@
     "monoqi.com",
     "sancarlos.es",
     "bimbaylola.com",
-    "ufshoes.com",
-    "cardmarket.com"
+    "ufshoes.com"
   ]
 }

@@ -1,105 +1,105 @@
 #version: "3.8"
 services:
-   webapp:
-     container_name: webapp
-     build:
-       context: ${APP_ROUTE}
-       dockerfile: Dockerfile
-       target: webapp
-       args:
-         APP_ROUTE: .
-     environment:
-       - NGINX_HOST=webapp
-       - NGINX_PORT=4321
-       - NODE_ENV=development
-     ports:
-       - 9229:9229
-     restart: unless-stopped
-     volumes:
-       - ${APP_ROUTE}:/usr/src/app
-       - /usr/src/app/node_modules
-     networks:
-       - node_network
+  webapp:
+    container_name: webapp
+    build:
+      context: ${APP_ROUTE}
+      dockerfile: Dockerfile
+      target: webapp
+      args:
+        APP_ROUTE: .
+    environment:
+      - NGINX_HOST=webapp
+      - NGINX_PORT=4321
+      - NODE_ENV=development
+    ports:
+      - 9229:9229
+    restart: unless-stopped
+    volumes:
+      - ${APP_ROUTE}:/usr/src/app
+      - /usr/src/app/node_modules
+    networks:
+      - node_network
 
-   proxy:
-     container_name: proxy
-     restart: unless-stopped
-     image: nginx:latest
-     ports:
-       - ${HOST_HTTP_PORT:-80}:${NGINX_PORT:-80}
-       - 4321:4321
-       - 3000:3000
-       - 6277:6277
-     depends_on:
-       - webapp
-     volumes:
-       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
-     networks:
-       - node_network
+  proxy:
+    container_name: proxy
+    restart: unless-stopped
+    image: nginx:latest
+    ports:
+      - ${HOST_HTTP_PORT:-80}:${NGINX_PORT:-80}
+      - 4321:4321
+      - 3000:3000
+      - 6277:6277
+    depends_on:
+      - webapp
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - node_network
 
-   dbPostgres:
-     image: postgres:latest
-     ports:
-       - 5432:5432
-     restart: unless-stopped
-     volumes:
-       - postgres-data:/var/lib/postgresql:rw
-     container_name: dbPostgres
-     environment:
-       - POSTGRES_USER=${POSTGRES_USER}
-       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-       - POSTGRES_DB=${POSTGRES_DB}
-     networks:
-       - node_network
+  dbPostgres:
+    image: postgres:latest
+    ports:
+      - 5432:5432
+    restart: unless-stopped
+    volumes:
+      - postgres-data:/var/lib/postgresql:rw
+    container_name: dbPostgres
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    networks:
+      - node_network
 
-  #  elasticsearch:
-  #    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.1
-  #    container_name: elasticsearch
-  #    environment:
-  #      - discovery.type=single-node
-  #      - xpack.security.enabled=false
-  #      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-  #    volumes:
-  #      - elasticsearch-data:/usr/share/elasticsearch/data
-  #    ports:
-  #      - "9200:9200"
-  #      - "9300:9300"
-  #    networks:
-  #      - node_network
-  #    restart: unless-stopped
+#  elasticsearch:
+#    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.1
+#    container_name: elasticsearch
+#    environment:
+#      - discovery.type=single-node
+#      - xpack.security.enabled=false
+#      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+#    volumes:
+#      - elasticsearch-data:/usr/share/elasticsearch/data
+#    ports:
+#      - "9200:9200"
+#      - "9300:9300"
+#    networks:
+#      - node_network
+#    restart: unless-stopped
 
-  #  graphql:
-  #    container_name: graphql
-  #    restart: always
-  #    image: graphql
-  #    build:
-  #      context: .
-  #      target: graphql
-  #    env_file:
-  #      - ./.env
-  #    environment:
-  #      - NGINX_HOST=webapp
-  #      - NGINX_PORT=3000
-  #    depends_on:
-  #      - postgres
-  #    networks:
-  #      - node_network
-  #    volumes:
-  #      - ./graphql:/usr/src/app
-  #      - /usr/src/app/node_modules
-  #    ports:
-  #      - 5433:3000
-  #    command:
-  #      [
-  #        "--connection",
-  #        "${DATABASE_URL}",
-  #        "--port",
-  #        "5433",
-  #        "--schema",
-  #        "public",
-  #        "--append-plugins",
-  #        "postgraphile-plugin-connection-filter,custom-plugin",
-  #      ]
+#  graphql:
+#    container_name: graphql
+#    restart: always
+#    image: graphql
+#    build:
+#      context: .
+#      target: graphql
+#    env_file:
+#      - ./.env
+#    environment:
+#      - NGINX_HOST=webapp
+#      - NGINX_PORT=3000
+#    depends_on:
+#      - postgres
+#    networks:
+#      - node_network
+#    volumes:
+#      - ./graphql:/usr/src/app
+#      - /usr/src/app/node_modules
+#    ports:
+#      - 5433:3000
+#    command:
+#      [
+#        "--connection",
+#        "${DATABASE_URL}",
+#        "--port",
+#        "5433",
+#        "--schema",
+#        "public",
+#        "--append-plugins",
+#        "postgraphile-plugin-connection-filter,custom-plugin",
+#      ]
 
 #  typescript:
 #    container_name: typescript
@@ -126,5 +126,4 @@ networks:
   node_network:
 
 volumes:
-  postgres-data:
-  # elasticsearch-data:
+  postgres-data: # elasticsearch-data:

@@ -89,3 +89,6 @@ public
 
 # Docker
 docker-compose.override.yml
+code/
+dashboard/
+server/
