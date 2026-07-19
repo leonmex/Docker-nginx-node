@@ -11,6 +11,21 @@ priority ordering and the backend gaps that block starting some of them.
 
 No emojis anywhere, per repo convention.
 
+> [!IMPORTANT]
+> **Every route below MUST live under `/api/admin/`** — not a convention to
+> follow loosely, an enforced requirement. `nginx/default.conf` has a
+> dedicated `location /api/admin/` block with **no rate limiting at all**
+> (unlike every other `/api/*` path), because the dashboard is a trusted
+> internal tool that legitimately does bulk operations (e.g. auditing
+> thousands of mobile accounts) and every route here is already gated by
+> `requireAdmin()`/the session cookie — that auth check is the real defense,
+> not a rate ceiling. A route that's admin-gated but registered outside this
+> prefix (the mistake found and fixed 2026-07-19 in
+> `llm-performance.ts` — its two admin actions were at `/api/llm-performance/...`
+> instead of `/api/admin/llm-performance/...`) silently falls into the
+> rate-limited general zone instead and can get 503'd during real bulk admin
+> work. See `proxy_hardening_and_public_access_proposal.md` §2.1.
+
 ---
 
 ## Priority order and why

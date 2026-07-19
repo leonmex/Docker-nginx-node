@@ -182,10 +182,14 @@ First section created with i18n + DB + tests from scratch.
   `llm-performance:metrics`, invalidates on write). Routes (`src/routes/llm-performance.ts`):
   - `GET /api/llm-performance/metrics` (KPIs, action-flow, top overridden)
   - `GET /api/llm-performance/suggestions` (region/status filter, paginated)
-  - `POST /api/llm-performance/suggestions/:id/review` (admin: approve/reject/merge)
+  - `POST /api/admin/llm-performance/suggestions/:id/review` (admin: approve/reject/merge)
   - `GET /api/llm-performance/logs` (override/misclassification log)
-  - `POST /api/llm-performance/logs/:id/flag` (admin: flag for retraining)
-  Write actions are admin-gated (401 without session, 403 for non-admins).
+  - `POST /api/admin/llm-performance/logs/:id/flag` (admin: flag for retraining)
+  Write actions are admin-gated (401 without session, 403 for non-admins) and
+  live under `/api/admin/` (2026-07-19 rename) so nginx's admin-traffic
+  rate-limit exemption covers them — every admin-gated route should register
+  under this prefix going forward, see
+  `proxy_hardening_and_public_access_proposal.md` §2.1.
 - Frontend: `dashboard/src/pages/llm-performance` (4 KPI cards + 3 tabs: Overview
   charts, Pending Suggestions ProTable, Override Log ProTable). Action buttons shown
   only to admins (`currentUser.access === 'admin'`). Route `BlablaAI > Dashboard`
