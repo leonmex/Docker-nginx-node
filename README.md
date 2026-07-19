@@ -82,7 +82,20 @@ Use the following commands to manage the database and cache.
   docker compose exec server npm run db:check
   ```
 
-### 3. Direct Database Access
+### 3. Database Migrations
+* **Run pending migrations**:
+  Executes all pending `.sql` migration files sequentially from `db/migrations/`:
+  ```bash
+  docker compose exec server npm run dev:executemigration
+  ```
+
+* **Run migrations with database backup**:
+  Optionally creates a JSON backup of the current database tables in `db/backups/` before migrating:
+  ```bash
+  docker compose exec server npm run dev:executemigration -- --backup
+  ```
+
+### 4. Direct Database Access
 * **Access the PostgreSQL CLI**:
   ```bash
   docker compose exec dbPostgres psql -U postgres -d test
@@ -93,6 +106,22 @@ Use the following commands to manage the database and cache.
   ```bash
   docker compose exec dbPostgres psql -U postgres -d test -c "SELECT * FROM user_tags;"
   ```
+
+## HTTPS & SSL Setup
+
+Both the webapp and server are served over HTTPS via the Nginx reverse proxy. A self-signed SSL/TLS certificate is used for local development.
+
+### Generating SSL Certificates
+To generate or renew the self-signed SSL certificate:
+```bash
+./scripts/generate-certs.sh
+```
+This script generates `server.key` and `server.crt` inside `nginx/certs/`, which are automatically mounted into the `proxy` container.
+
+### Ports and Protocol
+- **Port 80**: Redirects automatically to HTTPS (`https://webapp-node.io/`).
+- **Port 443**: Serves the main application and API endpoints over SSL.
+- **Ports 3000 & 4321**: Converted to HTTPS/SSL ports (automatically redirects to HTTPS if accessed via HTTP).
 
 ## Notes
 
