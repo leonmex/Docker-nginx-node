@@ -1,7 +1,7 @@
 # Migration Progress — Mock to PostgreSQL + Fastify Backend
 
 Tracking log for the **Database-First** modernization (`CLAUDE-DATABASE-FIRST-STEP.md`).
-Last updated: **2026-06-19**.
+Last updated: **2026-07-18**.
 
 No emojis are used in this document (project rule).
 
@@ -150,6 +150,13 @@ never touched the backend.
       three locales; `index.tsx`, `ActiveChart`, `Map`). Dashboard TSC + Biome pass.
       Note: the map's data endpoints (`/api/monitor/map-geo`, `/api/monitor/map-grid`)
       and their large zh-CN GeoJSON dataset remain deferred (separate from UI text).
+- [x] `src/pages/account/settings` and `src/pages/account/center` (+ shared
+      `src/components/ArticleListContent`) fully internationalized —
+      `pages.account.settings.*` / `pages.account.center.*` /
+      `component.articleListContent.*` in `en-US`, `de-DE`, `es-ES`. See "New
+      section: Account (settings/center)" below for the accompanying backend
+      migration. Dashboard TSC + Biome + `antd lint` pass; zero Chinese in
+      `src/pages/account`.
 - [ ] Remaining pages with hardcoded text (~50 files): workplace and others.
       Enumerate with `grep -rIl "[一-鿿]" src/pages | sort` and convert per the guide.
       Track here as they are done.
@@ -188,6 +195,82 @@ First section created with i18n + DB + tests from scratch.
   `test/cache.test.ts`. **Server: 59 tests passing.**
 - Gates passed: server `tsc`+`test`; dashboard `tsc`, Biome, `antd lint`, `build`;
   zero Chinese in the section. Verified end-to-end via nginx.
+
+---
+
+## New section: Account (settings/center)
+
+Migrated `dashboard/src/pages/account/{settings,center}` off the legacy Express
+mocks (`_mock.ts`, `dashboard/mock/utils.ts`) onto Postgres + Fastify, added a
+lightweight backend i18n mechanism, and fully internationalized the pages'
+previously-hardcoded Chinese UI text in the same pass. Built from
+`implementation_plan-section-account.md` / `project-migrate-section-account.md`.
+
+- **Backend i18n** (`server/src/core/i18n.ts`, new): a flat `I18nManager`
+  dictionary per locale (`en`/`es`/`de`), no external i18n library. Any DB
+  column holding translatable content stores a *key* (e.g. `country.ES`,
+  `user.admin.signature`), resolved per-request via `resolveLocale(Accept-Language)`.
+  Never throws on a missing key — falls back to the caller's `defaultMessage`
+  or the key itself, mirroring the frontend's `useIntl` convention.
+- **Schema** (`db/migrations/0003_account_section.sql` + `schema.sql`): new
+  `countries`/`provinces`/`cities` (Spain, Germany, England, Mexico — 4
+  countries, 12 provinces, 12 cities), `user_teams` (Center sidebar "team"
+  list, replacing `getProjectNotice()`), `account_activity_items` (shared
+  Articles/Projects/Applications feed, replacing the mock's random
+  `fakeList(count)` generator with 30 deterministic seeded rows). `users`
+  keeps its existing columns, but `signature`/`title`/`group_name`/
+  `user_tags.label` now store translation keys, and `geographic` stores only
+  `{ province: { key }, city: { key } }` — labels are resolved at read time
+  via a join, not stored. The seeded admin/user profiles were reassigned from
+  China (`浙江省`/`杭州市`) to Spain (`ES-MD`/`ES-MD-MAD`) since the target
+  country list is ES/DE/GB/MX; no Chinese content remains in the seeds.
+- **Repositories**: `IGeographicRepository` (`Pg`/`CachedGeographicRepository`,
+  cache keyed `geo:{countries,provinces,cities}:<locale>:...`);
+  `IAccountRepository` (`Pg`/`CachedAccountRepository` — `findDetail` reuses
+  the injected `IUserRepository.findProfile` rather than duplicating the
+  profile query; `listActivityItems` caches the full list per locale and lets
+  the route slice by `count`). `IUserRepository.findProfile` gained a
+  `locale` parameter; `CachedUserRepository`'s cache key became
+  `user:profile:<userid>:<locale>` since content is now locale-dependent.
+  New domain types live in `src/domain/geographic.types.ts` and
+  `src/domain/account.types.ts` (kept out of the growing `domain/types.ts`
+  per review feedback — a follow-up should split that file the same way).
+- **Auth**: centralized `authenticateHandler` (`routes/auth.ts`), registered
+  as `app.decorate('authenticate', ...)` on the *root* Fastify instance in
+  `app.ts` (not inside a plugin — see Issue 9 in `learned_lessons.md` for why
+  that placement matters) so both `routes/auth.ts` and `routes/users.ts` can
+  gate routes with `{ preHandler: app.authenticate }`.
+- **Routes**: `GET /api/accountSettingCurrentUser`, `GET /api/geographic/countries`,
+  `GET /api/geographic/province?country=`, `GET /api/geographic/city/:province`,
+  `GET /api/currentUserDetail`, `GET /api/fake_list_Detail?count=` — all
+  gated, all locale-aware. `GET /api/currentUser` untouched behaviorally,
+  just threads `locale` through to `findProfile`.
+- **Frontend**: `settings/service.ts` gained `queryCountries()` and
+  `queryProvince(country?)`; `settings/components/base.tsx`'s country
+  `ProFormSelect` is now DB-backed and the province select is wrapped in
+  `ProFormDependency` on `country` (mirrors the existing province -> city
+  dependency). Deleted `settings/_mock.ts`, `center/_mock.ts`, and the
+  unused `settings/geographic/{province,city}.json`.
+- **i18n conversion**: all 10 hardcoded-Chinese files under
+  `pages/account/**` plus the shared `components/ArticleListContent`
+  converted to `useIntl`/`formatMessage`, keys in `pages.account.settings.*`,
+  `pages.account.center.*`, `component.articleListContent.*` (EN/DE/ES). The
+  Applications tab's Chinese-locale `万` (10k) number-abbreviation hack was
+  removed in favor of the existing `formatNumber` utility, since it doesn't
+  apply to any of this product's EN/DE/ES locales.
+- **Tests**: `test/i18n.test.ts` (unit), `test/account.repo.integration.test.ts`
+  (new — geographic + account repo reads), extended `test/api.integration.test.ts`
+  (401 gating for all 6 new/extended routes, locale-translation assertions),
+  updated `SeedCounts` assertions in `test/db.integration.test.ts` /
+  `test/reset.integration.test.ts` (Issue 5 pattern) and cache-key assertions
+  in `test/cache.test.ts` / `test/reset.integration.test.ts` (locale-scoped
+  keys). **Server: 85 tests passing.**
+- Gates passed: server `tsc`+`test` (85/85); dashboard `tsc`, Biome,
+  `antd lint`; zero Chinese in `src/pages/account`. Verified end-to-end
+  through nginx with `curl` (login, all 6 endpoints, en/es/de headers, 401
+  without a cookie). Dashboard `npm run build` was not run — the `webapp`
+  container was mid-dev-server at verification time and holds the utoopack
+  build-cache lock (see Issue 10-style conflict; not a code issue).
 
 ---
 
@@ -232,10 +315,12 @@ These are deliberate dev-time shortcuts that must be revisited before shipping.
 8. Connection pool defaults. Using `pg` defaults (max 10 per pool). Production
    needs tuned pool sizes and likely PgBouncer in front of Postgres.
 
-9. Seed data is still Chinese (zh-CN). Notices, signatures, etc. carry the original
+9. Seed data is still Chinese (zh-CN) in places. Notices carry the original
    mock content, which conflicts with the EN/DE/ES-only product constraint (see
-   `dashboard-project.md`). Localize or replace seed content before release.
-   (The new `dashboard_tags` seed uses neutral English terms.)
+   `dashboard-project.md`). Localize or replace remaining seed content before
+   release. (`dashboard_tags` and the account section's `users`/`user_tags`/
+   `user_teams`/`account_activity_items` seeds are now neutral/key-based and
+   translated into EN/DE/ES — see "New section: Account (settings/center)".)
 
 10. Tests are destructive against the dev DB. Integration tests TRUNCATE the
     `test` database. CI must use an ephemeral/throwaway DB, not a shared one.
