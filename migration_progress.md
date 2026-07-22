@@ -107,6 +107,31 @@ Everything runs container-first — no host `npm install`. Tooling runs via
 
 ---
 
+## Operational tooling — migration runner (`dev:executemigration`)
+
+Spec: `README.md` §3 "Database Migrations". Implemented in
+`server/db/executeMigration.ts`.
+
+- Tracks applied files in a new `schema_migrations(filename PK, applied_at)`
+  table (also added to `schema.sql`, so fresh databases start with it).
+- On each run: reads `db/migrations/*.sql` in filename order, skips any
+  already recorded in `schema_migrations`, and runs the rest — each file
+  inside its own transaction, recording it in the same transaction so a
+  failure never leaves a half-applied file marked as done.
+- `npm run dev:executemigration -- --backup` dumps every `public` schema
+  table to a timestamped JSON file under `server/db/backups/` (gitignored —
+  contains raw row data, including password hashes) before running anything.
+- Picked up `db/migrations/0005_user_teams_privileges.sql` (new
+  `user_teams_privileges` table — team/section/action permission grid,
+  seeded with baseline Customer-Service rows) as its first real pending
+  migration; folded into `schema.sql` per the existing convention.
+- Verified against the running dev DB: `--backup` run applied 0001-0005
+  cleanly (0001-0004 are idempotent re-runs, matching their existing
+  "safe to re-run" design), a second run correctly reported nothing pending,
+  and `db:seed` still applies the updated `schema.sql` without error.
+
+---
+
 ## Operational tooling — interactive reset & restore (`db:reset`)
 
 Spec: `CLAUDE-DATABASE-MIGRATION-V1.md`. Implemented in `server/db/reset.ts`
