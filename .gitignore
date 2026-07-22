@@ -92,3 +92,11 @@ docker-compose.override.yml
 
 server/
 dashboard/
+
+# Real PII (email/password/profile data) staged for the devops CLI tools
+# (server/devops/*.ts --file= input) — never committed. .gitkeep files are
+# explicitly re-included so the directories themselves survive a fresh clone.
+server/data/devops/incoming/*
+server/data/devops/processed/*
+!server/data/devops/incoming/.gitkeep
+!server/data/devops/processed/.gitkeep

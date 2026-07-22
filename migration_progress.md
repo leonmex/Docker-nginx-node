@@ -202,6 +202,156 @@ First section created with i18n + DB + tests from scratch.
 
 ---
 
+## New section: Accounts > Customers
+
+Built from `dashboard/docs/feature_customers_dashboard.md` (item 4 of the
+5-section proposal in `new_sections_for_dashboard.md`). Read/moderate the
+mobile app's end-user base — deliberately excludes payment data (IBAN/card),
+which stays behind the separate Payment & Fraud Review flow per that
+proposal's flag.
+
+- **Access control**: new team-based privilege table
+  (`db/migrations/0005_user_teams_privileges.sql`: `user_teams_privileges`,
+  keyed `team_title_key`/`section_key`/`action_key`), a finer-grained
+  alternative to the coarse `users.access === 'admin'` flag `requireAdmin`
+  (llm-performance, payment-fraud-review) uses. Seeded: `Customer-Service`
+  team gets `customers.view` and `account_data.edit_customers`; the seeded
+  `admin` login is on that team, `user` deliberately is not, so tests have a
+  ready-made "no privilege" persona (`db/fixtures.ts`). `IPrivilegeRepository`
+  / `PgPrivilegeRepository.hasPrivilege` — not cache-wrapped, a revoked grant
+  must take effect on the next request.
+- **Backend**: `src/domain/customer.types.ts` (`CustomerListItem`,
+  `CustomerDetail` with a route-computed `canEdit`, `CustomerEditableFields`
+  — identity columns username/user_id/email are permanently excluded from
+  edits, enforced by the route schema's `additionalProperties: false`).
+  `ICustomerRepository` / `PgCustomerRepository` joins `mobile_accounts` +
+  `user_profiles` (no cache wrapper — admin/support tool, current data over
+  read latency). Routes (`src/routes/customers.ts`, all under
+  `/api/admin/mobile-accounts`):
+  - `GET /api/admin/mobile-accounts` (list, filterable by id/userId/username/
+    email/emailVerified/isVerified/memberSince range/languageCode/
+    currencyCode, paginated) — requires `customers.view`.
+  - `GET /api/admin/mobile-accounts/:id` (detail + `canEdit`) — requires
+    `customers.view`.
+  - `PATCH /api/admin/mobile-accounts/:id` (emailVerified/isVerified/
+    languageCode/currencyCode only) — requires the stricter
+    `account_data.edit_customers`, re-checked here regardless of an earlier
+    GET's `canEdit`.
+- **Frontend**: `dashboard/src/pages/accounts/customers` — `index.tsx` (Accounts
+  -> Customers ProTable matching the spec's column mapping, explicit
+  pagination with a 10/20/50/100 size changer), `detail.tsx` (Customer/Details
+  form; based on `form/advanced-form`'s Card layout, split into two cards —
+  "Account Data" (`mobile_accounts` fields) and "Profile Settings"
+  (`user_profiles` fields) — matching `PgCustomerRepository.update`'s own
+  two independent UPDATE statements; each card has its own Edit/Save/Cancel.
+  Identity fields (username/user_id/email) always read-only. Email/Account
+  Verified are `ProFormRadio.Group` (button style), not a bare Switch — its
+  readonly view falls back to pro-components' generic "open"/"close" text.
+  Language/Currency are `ProFormSelect`s populated from `GET /api/languages`
+  / `GET /api/currencies` (see the Admin -> Sys-Config entry below), not free
+  text. Every card's edit affordance is gated on the GET/PATCH response's
+  `canEdit` rather than a client-side role check — the PATCH route echoes
+  `canEdit: true` too (it's trivially known there, since the route already
+  required `account_data.edit_customers` to reach that point), fixing a bug
+  where saving made the Edit button disappear (the dashboard replaces its
+  whole customer object with the PATCH response, and a missing `canEdit`
+  reads as false). New top-level `Accounts` menu (`config/routes.ts`) with
+  `Customers` as its child item; `/accounts/customers/:id` is reachable but
+  `hideInMenu`. i18n: `menu.accounts*` + `pages.accounts.customers.*` in
+  EN/DE/ES.
+- **Tests**: repo integration (`test/customers.repo.integration.test.ts` —
+  list filters/pagination, findById/findByUsername/findByEmail, partial
+  update semantics), API inject cases in `test/api.integration.test.ts`
+  (401/403 privilege gating for GET and PATCH separately, since they require
+  different grants; detail 404; PATCH schema rejects identity-field edits and
+  echoes `canEdit`).
+- Gates: server `tsc` + `test` passed once (before the Sys-Config work below
+  landed — needs a re-run); dashboard `tsc` passed (205 files, no issues) and
+  scoped Biome passed (`biome check src/pages/accounts src/locales` — 29
+  files, no issues). `antd lint` not yet run. `npm run build` blocked by the
+  `webapp` dev server holding the utoopack cache lock (same non-issue as the
+  Account section's entry below) — not re-attempted since the dev server is
+  what's actually serving the app for manual verification right now.
+
+---
+
+## New section: Admin -> Sys-Config (Languages, Currencies, Countries)
+
+Grew out of two real bugs found while using the Customers section above: the
+Language/Currency fields were free text with no validation against real data,
+and saving Account Data or Profile Settings made the Edit button disappear
+(fixed above). Scoped up per direct request into admin-managed reference data
+with its own dashboard section, rather than a one-off hardcoded list.
+
+- **Schema** (`db/migrations/0006_sys_config_languages_currencies.sql` +
+  `schema.sql`): `languages` (code PK, `name` — a plain editable display
+  string, NOT an i18n key like `countries`/`provinces`/`cities` use, since
+  these rows are admin-CRUD content rather than static seed data — `is_active`,
+  timestamps), `currencies` (code PK, `name`, `rate` NUMERIC(14,6) relative to
+  base currency EUR = 1.000000 — reserved for future conversion calculations,
+  nothing reads it yet; static placeholder seed values, not a live FX feed —
+  `is_active`, timestamps), and `countries.default_language_code` (new FK ->
+  `languages.code`). Seeded (`db/fixtures.ts`): languages en/de/es
+  (reconstructing the app's 3 supported locales from the 4 seeded countries'
+  primary language — ES/MX -> es, DE -> de, GB -> en); currencies EUR/GBP/MXN
+  (matching the seeded countries; no USD, since no seeded country uses it).
+  Delete is a soft `isActive` toggle everywhere, never a hard DELETE —
+  `currency_code`/`language_code` are unconstrained free text elsewhere
+  (`user_profiles`), so removing a row outright could silently orphan data.
+  `db/seed.ts`/`db/reset.ts` wired: languages insert before countries (FK
+  dependency), `resetTables`'s cascade-aware branch extended (truncating
+  `languages` now cascades through `countries` -> `provinces`/`cities` too).
+- **Backend**: `src/domain/sysConfig.types.ts` (`Language`, `Currency`,
+  `CountryAdminItem` + their editable-field types).
+  `ILanguageRepository`/`PgLanguageRepository`,
+  `ICurrencyRepository`/`PgCurrencyRepository` (list/create/update; NUMERIC
+  `rate` explicitly `Number()`-converted — pg returns it as a string, same
+  driver behavior `PgCustomerRepository.list`'s `total` already had to work
+  around), `ICountryAdminRepository`/`PgCountryAdminRepository` (list/update
+  only — distinct from `IGeographicRepository`, which returns locale-translated
+  `{id, name}` display options for the mobile/account address cascade; this
+  exposes the raw `code`/`name_key`/`default_language_code` instead). None
+  cache-wrapped (admin/support tool, current data over read latency — same
+  rationale as Customers/Payment-Fraud-Review). Routes
+  (`src/routes/sysConfig.ts`):
+  - `GET /api/languages`, `GET /api/currencies` (`?includeInactive=true`) —
+    open to any authenticated dashboard user, not admin-gated: the Customer
+    Details selects and the Customers list filters both need to read these,
+    and neither necessarily holds the admin flag (they only need
+    `customers.view`/`account_data.edit_customers`). Exposing a handful of
+    reference rows to any logged-in user is harmless — same posture as the
+    existing `/api/geographic/*` routes.
+  - `POST`/`PATCH /api/admin/languages(/:code)`,
+    `POST`/`PATCH /api/admin/currencies(/:code)`,
+    `GET`/`PATCH /api/admin/countries(/:code)` — all `requireAdmin`-gated
+    (mirrors llm-performance/payment-fraud-review's coarse
+    `users.access === 'admin'` check, not Customers' narrower team privilege
+    — sys config affects the whole platform). Countries is list + edit only,
+    no create/delete: provinces/cities cascade off it and expanding the
+    geography set wasn't requested.
+- **Frontend**: `dashboard/src/pages/admin/sys-config/currencies` (ProTable +
+  one `ModalForm` handling both create and edit, an inline `Switch` per row
+  for the active/inactive toggle) and
+  `dashboard/src/pages/admin/sys-config/languages-countries` (two `Tabs`:
+  Languages — same ModalForm/ProTable pattern as Currencies minus `rate`;
+  Countries — list + edit-only ProTable, the edit modal's Default Language
+  field is itself a `ProFormSelect` sourced from `GET /api/languages`). New
+  `Admin -> Sys-Config` menu with `Currencies` / `Languages & Countries`
+  children (`config/routes.ts`, under the existing `canAdmin`-gated `/admin`
+  parent). i18n: `menu.admin.sys-config*` + `pages.sysConfig.*` in EN/DE/ES.
+- **Tests**: repo integration
+  (`test/sysConfig.repo.integration.test.ts` — active/inactive filtering,
+  create/update for languages and currencies including the NUMERIC `rate`
+  conversion, countries list/update, soft-delete-not-hard-delete assertion).
+  API-level route tests (401/403/admin-gating, full CRUD flows) were drafted
+  but not yet landed in `test/api.integration.test.ts` — left for a follow-up
+  pass.
+- Gates: not yet run — this section was built immediately after the Customers
+  gate-check above; needs its own `tsc`/`test`/Biome/`antd lint`/`build` pass
+  before it can be called done.
+
+---
+
 ## New section: Account (settings/center)
 
 Migrated `dashboard/src/pages/account/{settings,center}` off the legacy Express
