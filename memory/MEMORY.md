@@ -1,0 +1,1 @@
+- [ListWithImages Bug Fix Methodology](listwithimages-bug-fix-methodology.md) — telemetry-based debugging, no guessing, trace data flow systematically
