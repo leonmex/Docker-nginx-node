@@ -1,2 +1,3 @@
 - [ListWithImages Bug Fix Methodology](listwithimages-bug-fix-methodology.md) — telemetry-based debugging, no guessing, trace data flow systematically
 - [Privilege model: typed registry](privilege-model-typed-registry.md) — never pass raw section/action strings; use PRIVILEGES.* constants, see sr_backend skill
+- Planning-first workflow: before implementing a feature, provide a short plan and wait for confirmation when the request is non-trivial.
