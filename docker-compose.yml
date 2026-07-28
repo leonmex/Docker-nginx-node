@@ -125,6 +125,23 @@ services:
       - dbPostgres
       - redis
       - minio
+      - mailhog
+    networks:
+      - node_network
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: mailhog
+    restart: unless-stopped
+    # SMTP catcher for SmtpEmailService (system_settings smtp.host=mailhog,
+    # smtp.port=1025, see db/migrations/0020_system_settings.sql) — internal
+    # only, reached by `server` as mailhog:1025.
+    expose:
+      - "1025"
+    # Web UI to inspect caught mail — loopback-only, same pattern as the
+    # minio console (security rule: no admin UI exposed on a public interface).
+    ports:
+      - 127.0.0.1:8025:8025
     networks:
       - node_network
 
