@@ -15,8 +15,10 @@ services:
       - PORT=3000
       - HOST=0.0.0.0
     # Debugger bound to loopback only — not exposed publicly (security rule).
+    # Host port overridable via HOST_DEBUG_PORT (see scripts/star-from-cero.sh,
+    # which remaps it automatically if something else already holds 9229).
     ports:
-      - 127.0.0.1:9229:9229
+      - 127.0.0.1:${HOST_DEBUG_PORT:-9229}:9229
     restart: unless-stopped
     # `npm run dev` = MOCK=none — Umi mock middleware disabled; /api/* is served
     # by the real backend via nginx (Phase 1 cutover).
@@ -31,11 +33,15 @@ services:
     container_name: proxy
     restart: unless-stopped
     image: nginx:latest
+    # Host ports overridable via .env — see scripts/star-from-cero.sh, which
+    # remaps any of these automatically if another process/project already
+    # holds them (container-side ports must stay fixed: nginx/default.conf
+    # hardcodes `listen 443/4321/3000`, it isn't env-substituted).
     ports:
       - ${HOST_HTTP_PORT:-80}:${NGINX_PORT:-80}
-      - 443:443
-      - 4321:4321
-      - 3000:3000
+      - ${HOST_HTTPS_PORT:-443}:443
+      - ${HOST_PROXY_PORT_4321:-4321}:4321
+      - ${HOST_PROXY_PORT_3000:-3000}:3000
     depends_on:
       - webapp
       - server
@@ -49,8 +55,9 @@ services:
   dbPostgres:
     image: postgres:18.4
     # Bound to loopback only — not exposed on external interfaces (security rule).
+    # Host port overridable via HOST_POSTGRES_PORT (see scripts/star-from-cero.sh).
     ports:
-      - 127.0.0.1:5432:5432
+      - 127.0.0.1:${HOST_POSTGRES_PORT:-5432}:5432
     restart: unless-stopped
     volumes:
       - postgres-data:/var/lib/postgresql:rw
@@ -66,8 +73,9 @@ services:
     image: redis:7-alpine
     restart: unless-stopped
     # Loopback-only host binding; reachable as redis://redis:6379 inside the network.
+    # Host port overridable via HOST_REDIS_PORT (see scripts/star-from-cero.sh).
     ports:
-      - 127.0.0.1:6379:6379
+      - 127.0.0.1:${HOST_REDIS_PORT:-6379}:6379
     volumes:
       - redis-data:/data
     networks:
@@ -83,8 +91,9 @@ services:
     # S3 API (9000) is internal only, reached by `server` as http://minio:9000
     # (same "no host port" pattern as `server` itself). Web console (9001) is
     # loopback-only for admin access, not exposed publicly.
+    # Host port overridable via HOST_MINIO_CONSOLE_PORT (see scripts/star-from-cero.sh).
     ports:
-      - 127.0.0.1:9001:9001
+      - 127.0.0.1:${HOST_MINIO_CONSOLE_PORT:-9001}:9001
     expose:
       - "9000"
     command: server /data --console-address ":9001"
@@ -140,8 +149,9 @@ services:
       - "1025"
     # Web UI to inspect caught mail — loopback-only, same pattern as the
     # minio console (security rule: no admin UI exposed on a public interface).
+    # Host port overridable via HOST_MAILHOG_PORT (see scripts/star-from-cero.sh).
     ports:
-      - 127.0.0.1:8025:8025
+      - 127.0.0.1:${HOST_MAILHOG_PORT:-8025}:8025
     networks:
       - node_network
 
