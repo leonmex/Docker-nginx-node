@@ -180,8 +180,34 @@ if [ "$CONFLICTS_FOUND" -eq 0 ]; then
   echo "  No conflicts — all default ports are free (or already ours)."
 fi
 
-# Reload .env now that any conflicting ports were rewritten, so the summary
-# below reflects reality.
+# ---------------------------------------------------------------------------
+# Keep MINIO_PUBLIC_URL_BASE (the address the server stamps into every
+# item_images.url it writes — server/src/config.ts) in sync with this host's
+# actual LAN IP. A stale value here doesn't fail loudly like a stuck port —
+# it silently bakes a dead address into every image URL the server writes
+# from then on, which is exactly what happened before this check existed
+# (see docs/steps-validation-migration-ts07.md's sibling investigation).
+# ---------------------------------------------------------------------------
+LAN_IP="$(hostname -I 2>/dev/null | awk '{print $1}')"
+if [ -z "$LAN_IP" ]; then
+  LAN_IP="$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for (i=1;i<=NF;i++) if ($i=="src") print $(i+1)}')"
+fi
+LAN_IP="${LAN_IP:-127.0.0.1}"
+
+HTTPS_PORT_FOR_MEDIA="$(get_env_var HOST_HTTPS_PORT 443)"
+if [ "$HTTPS_PORT_FOR_MEDIA" = "443" ]; then
+  NEW_MEDIA_BASE="https://${LAN_IP}/media"
+else
+  NEW_MEDIA_BASE="https://${LAN_IP}:${HTTPS_PORT_FOR_MEDIA}/media"
+fi
+CURRENT_MEDIA_BASE="$(get_env_var MINIO_PUBLIC_URL_BASE "")"
+if [ "$CURRENT_MEDIA_BASE" != "$NEW_MEDIA_BASE" ]; then
+  echo "  MINIO_PUBLIC_URL_BASE ${CURRENT_MEDIA_BASE:-<unset>} -> ${NEW_MEDIA_BASE}"
+  set_env_var "MINIO_PUBLIC_URL_BASE" "$NEW_MEDIA_BASE"
+fi
+
+# Reload .env now that any conflicting ports / MINIO_PUBLIC_URL_BASE were
+# rewritten, so the summary below reflects reality.
 set -a
 # shellcheck disable=SC1091
 source .env
@@ -190,11 +216,6 @@ set +a
 # ---------------------------------------------------------------------------
 # Bring the stack up.
 # ---------------------------------------------------------------------------
-LAN_IP="$(hostname -I 2>/dev/null | awk '{print $1}')"
-if [ -z "$LAN_IP" ]; then
-  LAN_IP="$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for (i=1;i<=NF;i++) if ($i=="src") print $(i+1)}')"
-fi
-LAN_IP="${LAN_IP:-127.0.0.1}"
 
 echo
 echo "Starting the development stack (docker compose up --build)..."
