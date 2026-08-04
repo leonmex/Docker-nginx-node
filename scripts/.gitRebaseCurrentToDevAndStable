@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+#
+# sync-branches.sh
+#
+# Automates:
+#   1. git pull (on the feature branch)
+#   2. checkout dev, rebase <feature-branch>
+#   3. checkout dev-stable, rebase <feature-branch>
+#
+# Requires double confirmation of the feature branch name before doing
+# anything, since rebase rewrites history and can't be casually undone.
+
+set -euo pipefail
+
+TARGET_BRANCHES=("dev" "dev-stable")
+
+# --- Helpers ---------------------------------------------------------------
+
+abort() {
+    echo "Aborted: $1" >&2
+    exit 1
+}
+
+confirm_yes() {
+    local prompt="$1"
+    local answer
+    read -r -p "$prompt [y/N]: " answer
+    [[ "$answer" =~ ^[Yy]([Ee][Ss])?$ ]]
+}
+
+branch_exists() {
+    git show-ref --verify --quiet "refs/heads/$1"
+}
+
+# --- Sanity checks -----------------------------------------------------------
+
+git rev-parse --is-inside-work-tree >/dev/null 2>&1 \
+    || abort "Not inside a git repository."
+
+if [[ -n "$(git status --porcelain)" ]]; then
+    abort "You have uncommitted changes. Commit, stash, or discard them first."
+fi
+
+# --- Ask which feature branch to use, twice ---------------------------------
+
+echo "Which feature branch should be pulled and rebased into: ${TARGET_BRANCHES[*]}?"
+read -r -p "Branch name: " FEATURE_BRANCH_1
+
+if [[ -z "$FEATURE_BRANCH_1" ]]; then
+    abort "No branch name entered."
+fi
+
+read -r -p "Please re-type the branch name to confirm: " FEATURE_BRANCH_2
+
+if [[ "$FEATURE_BRANCH_1" != "$FEATURE_BRANCH_2" ]]; then
+    abort "Branch names did not match. Nothing was done."
+fi
+
+FEATURE_BRANCH="$FEATURE_BRANCH_1"
+
+if ! branch_exists "$FEATURE_BRANCH"; then
+    abort "Local branch '$FEATURE_BRANCH' does not exist. Check the name (e.g. serv-XX-Something-v1) and try again."
+fi
+
+echo
+echo "About to run this sequence:"
+echo "  1. checkout $FEATURE_BRANCH && git pull"
+for b in "${TARGET_BRANCHES[@]}"; do
+    echo "  2. checkout $b && git rebase $FEATURE_BRANCH"
+done
+echo
+
+confirm_yes "Proceed with this plan?" || abort "User declined final confirmation."
+
+# --- Step 1: update the feature branch --------------------------------------
+
+echo "==> Checking out $FEATURE_BRANCH"
+git checkout "$FEATURE_BRANCH"
+
+echo "==> Pulling latest $FEATURE_BRANCH"
+git pull
+
+# --- Step 2: rebase into each target branch ---------------------------------
+
+for TARGET in "${TARGET_BRANCHES[@]}"; do
+    if ! branch_exists "$TARGET"; then
+        echo "!! Local branch '$TARGET' does not exist, skipping." >&2
+        continue
+    fi
+
+    echo "==> Checking out $TARGET"
+    git checkout "$TARGET"
+
+    echo "==> Rebasing $FEATURE_BRANCH into $TARGET"
+    if ! git rebase "$FEATURE_BRANCH"; then
+        echo "!! Rebase of $FEATURE_BRANCH into $TARGET failed/has conflicts." >&2
+        echo "   Resolve manually (git status), then 'git rebase --continue'," >&2
+        echo "   or 'git rebase --abort' to cancel." >&2
+        exit 1
+    fi
+done
+
+echo
+echo "Done. $FEATURE_BRANCH has been rebased into: ${TARGET_BRANCHES[*]}"
+echo "Remember: rebased branches need '--force-with-lease' to push, if you push at all."

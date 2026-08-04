@@ -65,6 +65,19 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
+    # GO-LIVE: stock redis:7-alpine defaults have NO maxmemory limit and NO
+    # eviction policy — unbounded growth until something else breaks. Real
+    # values come from .env (REDIS_MAXMEMORY/REDIS_MAXMEMORY_POLICY, see
+    # that file's comment for sizing guidance) so they can be tuned per
+    # environment without editing this file.
+    command:
+      [
+        "redis-server",
+        "--maxmemory",
+        "${REDIS_MAXMEMORY:-256mb}",
+        "--maxmemory-policy",
+        "${REDIS_MAXMEMORY_POLICY:-allkeys-lru}",
+      ]
     # Loopback-only host binding; reachable as redis://redis:6379 inside the network.
     ports:
       - 127.0.0.1:6379:6379
