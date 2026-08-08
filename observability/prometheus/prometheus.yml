@@ -1,0 +1,67 @@
+# Local-only storage (no remote_write) — see
+# CLAUDE-IMPLEMENT-OPTOMETRY-DASHBOARD-FOR-THE-SYSTEM.md §2.6 decision #4:
+# metrics durability (Thanos/Mimir) is deliberately deferred to the actual
+# Kubernetes move, not part of this pass.
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - /etc/prometheus/rules/*.yml
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: [localhost:9090]
+
+  - job_name: postgres-exporter
+    static_configs:
+      - targets: [postgres-exporter:9187]
+
+  - job_name: redis-exporter
+    static_configs:
+      - targets: [redis-exporter:9121]
+
+  - job_name: node-exporter
+    static_configs:
+      - targets: [node-exporter:9100]
+
+  # MinIO's own built-in Prometheus endpoints (enabled via
+  # MINIO_PROMETHEUS_AUTH_TYPE=public in docker-compose.yml's `minio`
+  # service) — cluster-wide capacity/usage AND per-bucket metrics,
+  # including the real `blablarags-apparel` image-assets bucket (the one
+  # this feeds a dashboard for is a genuinely different concern from the
+  # `telemetry-logs` bucket Loki uses — same MinIO instance, different
+  # buckets, see plan §13.4).
+  - job_name: minio-cluster
+    metrics_path: /minio/v2/metrics/cluster
+    static_configs:
+      - targets: [minio:9000]
+
+  - job_name: minio-bucket
+    metrics_path: /minio/v2/metrics/bucket
+    static_configs:
+      - targets: [minio:9000]
+
+  # Dev-only (see observability/turbopack-cache-exporter/exporter.mjs) —
+  # turbopack_cache_scrape_success reports 0, not a scrape failure, when
+  # `webapp` isn't running `npm run dev` (e.g. a production-style build).
+  - job_name: turbopack-cache-exporter
+    static_configs:
+      - targets: [turbopack-cache-exporter:9300]
+
+  # Phase 3 (not yet implemented — see plan §5.1/§9): server's own
+  # /internal/metrics route (prom-client) once it exists. Left commented
+  # rather than pointed at a route that doesn't exist yet, so Prometheus
+  # doesn't spam "context deadline exceeded" for a target that was never
+  # meant to be up yet.
+  # - job_name: node-nginx-clean-server
+  #   static_configs:
+  #     - targets: [server:5000]
+  #   metrics_path: /internal/metrics
+
+  # Phase 3: business-metrics-exporter (acquisitions/shipments/invariants).
+  # - job_name: business-metrics-exporter
+  #   static_configs:
+  #     - targets: [business-metrics-exporter:9200]

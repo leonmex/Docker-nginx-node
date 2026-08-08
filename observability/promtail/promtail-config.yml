@@ -1,0 +1,49 @@
+# Reads directly from the NAS-mounted directory `server` writes its pino
+# JSON logs to (bind-mounted into THIS container at /var/log/telemetry —
+# see docker-compose.observability.yml's promtail service). This is the
+# same file server/src/core/logger.ts refuses to write to unless it's a
+# real network filesystem (see server/src/core/nasMount.ts) — Promtail and
+# the app are reading/writing the same real NAS path, not a copy.
+#
+# Deliberately NOT scraping Docker container stdout — see
+# CLAUDE-IMPLEMENT-OPTOMETRY-DASHBOARD-FOR-THE-SYSTEM.md §2.6 decision #2
+# for why the NAS file path was chosen over that alternative.
+
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /var/lib/promtail/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: node-nginx-clean-server
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: node-nginx-clean-server
+          __path__: /var/log/telemetry/*.log
+    pipeline_stages:
+      # pino's JSON schema (server/src/core/logger.ts's buildPino): every
+      # record has level/time/service/pid/hostname/msg, plus whatever
+      # fields the call site passed (module, reqId, err, etc.).
+      - json:
+          expressions:
+            level: level
+            service: service
+            module: module
+            time: time
+      # Only low-cardinality fields become Loki LABELS (indexed, used for
+      # stream selection) — reqId/err/etc. stay in the log line body,
+      # queryable via `| json | reqId="..."` in LogQL, never as a label
+      # (a label per unique reqId would blow up Loki's index).
+      - labels:
+          level:
+          service:
+          module:
+      - timestamp:
+          source: time
+          format: RFC3339Nano

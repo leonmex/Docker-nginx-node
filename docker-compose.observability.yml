@@ -1,0 +1,166 @@
+# Grafana observability stack — opt-in, layered on top of the main
+# docker-compose.yml (never merged into it, so a plain `docker compose up`
+# for normal dev work is unaffected — see
+# CLAUDE-IMPLEMENT-OPTOMETRY-DASHBOARD-FOR-THE-SYSTEM.md §10 open question
+# #5). Usage:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.observability.yml up -d
+#
+# Joins the existing `node_network` (declared external below, defined by
+# the root docker-compose.yml) rather than defining its own — every new
+# service can reach `server`/`dbPostgres`/`redis`/`minio` by their existing
+# service names, no separate network wiring needed.
+#
+# Every new port binds to 127.0.0.1 only, matching this repo's existing
+# posture for dbPostgres/redis/minio-console/mailhog — see plan §8.
+
+services:
+  # One-shot: creates the `telemetry-logs` bucket in the EXISTING `minio`
+  # service (reused, not a dedicated instance — see plan §2.6 decision #1)
+  # if it doesn't already exist, then exits. Loki won't start until this
+  # succeeds.
+  minio-init-telemetry-bucket:
+    image: minio/mc:latest
+    container_name: minio-init-telemetry-bucket
+    entrypoint: sh
+    command:
+      - -c
+      - |
+        mc alias set local http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD" &&
+        mc mb --ignore-existing local/telemetry-logs &&
+        echo "telemetry-logs bucket ready"
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER:-minioadmin}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-minioadmin}
+    networks: [node_network]
+
+  prometheus:
+    image: prom/prometheus:v3.0.1
+    container_name: prometheus
+    volumes:
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./observability/prometheus/rules:/etc/prometheus/rules:ro
+      - prometheus-data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=15d
+    ports:
+      - "127.0.0.1:9090:9090"
+    networks: [node_network]
+
+  loki:
+    image: grafana/loki:3.3.0
+    container_name: loki
+    volumes:
+      - ./observability/loki/loki-config.yml:/etc/loki/local-config.yaml:ro
+      - loki-data:/loki
+    command: -config.file=/etc/loki/local-config.yaml -config.expand-env=true
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER:-minioadmin}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-minioadmin}
+    ports:
+      - "127.0.0.1:3100:3100"
+    depends_on:
+      minio-init-telemetry-bucket:
+        condition: service_completed_successfully
+    networks: [node_network]
+
+  promtail:
+    image: grafana/promtail:3.3.0
+    container_name: promtail
+    volumes:
+      - ./observability/promtail/promtail-config.yml:/etc/promtail/config.yml:ro
+      - promtail-positions:/var/lib/promtail
+      # Reads directly from the same NAS path `server` writes to (see
+      # docker-compose.yml's `server.volumes` and plan §2.6/§5.5) — NOT
+      # Docker stdout, NOT a copy. Read-only: Promtail only ever tails.
+      - ${TELEMETRY_LOG_NAS_DIR:-/mnt/junglenas/logs/node-nginx-clean-server}:/var/log/telemetry:ro
+    command: -config.file=/etc/promtail/config.yml
+    depends_on: [loki]
+    networks: [node_network]
+
+  postgres-exporter:
+    # v0.15.0 predates the pg_stat_checkpointer split (PG17+ moved
+    # checkpointer stats out of pg_stat_bgwriter) — its bundled default
+    # query errored every scrape against postgres:18.4. Fixed upstream in
+    # v0.17.0; pinned to the current stable release.
+    image: prometheuscommunity/postgres-exporter:v0.20.1
+    container_name: postgres-exporter
+    environment:
+      - DATA_SOURCE_NAME=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@dbPostgres:5432/${POSTGRES_DB}?sslmode=disable
+    networks: [node_network]
+
+  # Republishes webapp's existing dev-only Turbopack build-cache JSON
+  # endpoint (dashboard/plugins/cacheMonitorPlugin.ts) as Prometheus
+  # metrics — that endpoint isn't Prometheus-format and Prometheus can't
+  # scrape arbitrary JSON, so this small custom exporter is the bridge.
+  # See CLAUDE-IMPLEMENT-OPTOMETRY-DASHBOARD-FOR-THE-SYSTEM.md §13.5.
+  turbopack-cache-exporter:
+    build: ./observability/turbopack-cache-exporter
+    container_name: turbopack-cache-exporter
+    environment:
+      - TURBOPACK_CACHE_URL=http://webapp:3000/dev/turbopack-cache-size
+    networks: [node_network]
+
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.62.0
+    container_name: redis-exporter
+    environment:
+      - REDIS_ADDR=redis:6379
+    networks: [node_network]
+
+  # Host-level metrics (CPU/memory/disk/load) — this machine, not a
+  # container. Read-only mounts of the host's /proc, /sys, and root fs;
+  # `pid: host` lets it see real host process/CPU state rather than its
+  # own container's cgroup view. Directly relevant to "detect any possible
+  # issue in our system" (the observability project's original goal) —
+  # e.g. the NAS mount dropping, disk filling up, or memory pressure (this
+  # host has hit ~1.5GB swap usage before, observed while researching this
+  # plan) are all host-level, not application-level, signals.
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    container_name: node-exporter
+    pid: host
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/host/root:ro
+    command:
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      - --path.rootfs=/host/root
+      - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
+    networks: [node_network]
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    container_name: grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      # Reverse-proxied under /grafana/ via nginx/default.conf's `location
+      # /grafana/` block — both of these are required together for Grafana
+      # to generate correct asset/redirect URLs under a subpath instead of
+      # 404ing everything at the root.
+      - GF_SERVER_ROOT_URL=%(protocol)s://%(domain)s/grafana/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      # NOT 3000 — already used by webapp. Loopback only, see plan §8.
+      - "127.0.0.1:3300:3000"
+    depends_on: [prometheus, loki]
+    networks: [node_network]
+
+networks:
+  node_network:
+    external: true
+    name: node-nginx-clean_node_network
+
+volumes:
+  prometheus-data:
+  loki-data:
+  grafana-data:
+  promtail-positions:

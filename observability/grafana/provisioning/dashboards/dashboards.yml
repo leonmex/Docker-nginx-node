@@ -1,0 +1,12 @@
+apiVersion: 1
+
+providers:
+  - name: node-nginx-clean
+    orgId: 1
+    folder: node-nginx-clean
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards

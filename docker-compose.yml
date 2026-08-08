@@ -101,6 +101,16 @@ services:
     environment:
       - MINIO_ROOT_USER=${MINIO_ROOT_USER:-minioadmin}
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-minioadmin}
+      # Enables MinIO's own built-in Prometheus metrics endpoints
+      # (/minio/v2/metrics/cluster, /minio/v2/metrics/bucket — real storage
+      # usage for the image-assets bucket, not the telemetry one) without
+      # requiring a separate service-account JWT. Safe here specifically
+      # because port 9000 is already internal-only (no host port, see
+      # `expose` below) — "public" only means "no extra auth on top of
+      # already not being reachable outside node_network", not actually
+      # public to the LAN. See CLAUDE-IMPLEMENT-OPTOMETRY-DASHBOARD-FOR-
+      # THE-SYSTEM.md §13.4 for the dashboard this feeds.
+      - MINIO_PROMETHEUS_AUTH_TYPE=public
     # S3 API (9000) is internal only, reached by `server` as http://minio:9000
     # (same "no host port" pattern as `server` itself). Web console (9001) is
     # loopback-only for admin access, not exposed publicly.
@@ -110,8 +120,13 @@ services:
     expose:
       - "9000"
     command: server /data --console-address ":9001"
+    # NAS-backed, not the local minio-data volume (kept below, unused, in
+    # case of rollback). MinIO doesn't officially support CIFS/NFS backing
+    # storage — accepted risk, see CLAUDE-IMPLEMENT-OPTOMETRY-DASHBOARD-
+    # FOR-THE-SYSTEM.md §2.6 (2026-08-06). Existing data (blablarags-apparel
+    # + telemetry-logs, ~1.2GB) was migrated here via rsync before the cutover.
     volumes:
-      - minio-data:/data
+      - ${MINIO_DATA_NAS_DIR:-/mnt/junglenas/logs/minio-data}:/data
     networks:
       - node_network
 
@@ -119,8 +134,15 @@ services:
     image: node:22-alpine
     working_dir: /usr/src/server
     restart: unless-stopped
+    # Parameterized (not a hardcoded "./.env") so `docker compose --env-file
+    # .env.presentation up` actually takes effect here too — --env-file only
+    # controls ${VAR} interpolation in this YAML, it does NOT change what an
+    # env_file: directive loads into the container at runtime. Without this,
+    # presentation mode still booted the server against the real .env and it
+    # crashed on ALLOW_LOCAL_LOG_DIR=false (found + fixed 2026-08-07 — see
+    # README_RUN_PRESENTATION.md).
     env_file:
-      - ./.env
+      - ${SERVER_ENV_FILE:-./.env}
     environment:
       - NODE_ENV=development
       - DB_HOST=dbPostgres
@@ -143,11 +165,58 @@ services:
     volumes:
       - ./server:/usr/src/server
       - server_node_modules:/usr/src/server/node_modules
+      # NAS-backed telemetry log dir — see
+      # CLAUDE-IMPLEMENT-OPTOMETRY-DASHBOARD-FOR-THE-SYSTEM.md §2.6/§5.5.
+      # logger.ts refuses to start file logging if this doesn't resolve to a
+      # real network filesystem (unless ALLOW_LOCAL_LOG_DIR=true), so a
+      # dropped NAS mount fails loudly at container start instead of
+      # silently writing logs to this bind mount's local fallback content.
+      - ${TELEMETRY_LOG_NAS_DIR:-/mnt/junglenas/logs/node-nginx-clean-server}:/usr/src/server/logs
     depends_on:
       - dbPostgres
       - redis
       - minio
       - mailhog
+    networks:
+      - node_network
+
+  # Coming-soon marketing site (Astro) — local dev preview only. Production
+  # deploys to Cloudflare Workers (www.blablarags.com) via Cloudflare's
+  # GitHub-connected Workers Builds, not this container — see
+  # website/webs-01-comming-soon_v1.md. Deliberately NOT wired into
+  # nginx/default.conf: different domain/audience than webapp-node.io (the
+  # internal admin/API domain the rest of this stack serves).
+  # NOTE: uses the glibc `node:22` image, not `node:22-alpine` (unlike this
+  # stack's other plain-image services) — Cloudflare's `workerd` runtime
+  # (needed by `astro build`'s prerender step and `wrangler dev`, both run
+  # inside this container per the "everything through Docker" convention)
+  # ships musl-incompatible binaries. See webs-01-comming-soon_v1.md §9.
+  website:
+    image: node:22
+    container_name: website
+    working_dir: /usr/src/website
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=development
+      - HOST=0.0.0.0
+      - PORT=4322
+      # Non-interactive wrangler auth — see .env's own comment for why not
+      # `wrangler login` (browser-OAuth-inside-Docker doesn't work).
+      - CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN}
+    # Host port overridable via HOST_WEBSITE_PORT (see scripts/star-from-cero.sh).
+    ports:
+      - ${HOST_WEBSITE_PORT:-4322}:4322
+    # `rm -f .astro/dev.json` before every start: astro dev writes a
+    # root-owned PID lock there, into the bind-mounted host dir. Any
+    # non-graceful stop (restart/recreate/SIGKILL) leaves it stale, and the
+    # next start then refuses with "Another astro dev server is already
+    # running" — self-heals here instead of needing a manual `docker
+    # compose run --rm website rm -f .astro/dev.json` every time (hit this
+    # 3x before adding the fix — see webs-01-comming-soon_v1.md §11).
+    command: sh -c "npm install --ignore-scripts && rm -f .astro/dev.json && npm run dev -- --host 0.0.0.0 --port 4322"
+    volumes:
+      - ./website:/usr/src/website
+      - website_node_modules:/usr/src/website/node_modules
     networks:
       - node_network
 
@@ -251,5 +320,10 @@ volumes:
   postgres-data:
   redis-data:
   minio-data:
+  # Local-disk fallback for TELEMETRY_LOG_NAS_DIR — used only in presentation/
+  # standalone mode (see README_RUN_PRESENTATION.md), when there's no NAS
+  # to bind-mount. Unused (and harmless) the rest of the time.
+  server-logs-local:
   webapp_node_modules:
-  server_node_modules: # elasticsearch-data:
+  server_node_modules:
+  website_node_modules: # elasticsearch-data:

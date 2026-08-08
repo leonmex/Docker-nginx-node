@@ -1,0 +1,153 @@
+{
+  "title": "MinIO — Buckets & Storage (Object Assets)",
+  "uid": "minio-buckets",
+  "description": "Real bucket-level storage for this stack's MinIO instance — blablarags-apparel is the production image-assets bucket (product photos), telemetry-logs is Loki's own chunk storage. Same MinIO instance today; if this ever moves to a real S3 bucket, only the exporter changes (S3 doesn't expose Prometheus metrics natively — see CLAUDE-IMPLEMENT-OPTOMETRY-DASHBOARD-FOR-THE-SYSTEM.md §13.4 for the migration note).",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-24h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Cluster health",
+      "gridPos": { "h": 5, "w": 4, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "1": { "text": "Healthy", "color": "green" } } },
+            { "type": "value", "options": { "0": { "text": "DEGRADED/DOWN", "color": "red" } } }
+          ],
+          "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        }
+      },
+      "targets": [{ "expr": "minio_cluster_health_status", "refId": "A" }]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Drives online",
+      "gridPos": { "h": 5, "w": 4, "x": 4, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "targets": [{ "expr": "minio_cluster_drive_online_total", "refId": "A" }]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Nodes online",
+      "gridPos": { "h": 5, "w": 4, "x": 8, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "targets": [{ "expr": "minio_cluster_nodes_online_total", "refId": "A" }]
+    },
+    {
+      "id": 4,
+      "type": "gauge",
+      "title": "Cluster raw capacity used",
+      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 90 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "expr": "100 * (minio_cluster_capacity_raw_total_bytes - minio_cluster_capacity_raw_free_bytes) / minio_cluster_capacity_raw_total_bytes",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "blablarags-apparel — objects",
+      "description": "Product/apparel image count — the real image-assets bucket.",
+      "gridPos": { "h": 5, "w": 4, "x": 18, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "unit": "short" } },
+      "targets": [
+        { "expr": "minio_bucket_usage_object_total{bucket=\"blablarags-apparel\"}", "refId": "A" }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "blablarags-apparel — size",
+      "gridPos": { "h": 5, "w": 4, "x": 18, "y": 5 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "unit": "bytes" } },
+      "targets": [
+        { "expr": "minio_bucket_usage_total_bytes{bucket=\"blablarags-apparel\"}", "refId": "A" }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Bucket size over time, by bucket",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 5 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "unit": "bytes" } },
+      "targets": [
+        {
+          "expr": "minio_bucket_usage_total_bytes",
+          "legendFormat": "{{bucket}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Object count over time, by bucket",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "targets": [
+        {
+          "expr": "minio_bucket_usage_object_total",
+          "legendFormat": "{{bucket}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "type": "barchart",
+      "title": "blablarags-apparel — object size distribution",
+      "description": "How large product images actually are — useful for spotting unexpectedly huge uploads bloating storage.",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 13 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "targets": [
+        {
+          "expr": "minio_bucket_objects_size_distribution{bucket=\"blablarags-apparel\"}",
+          "legendFormat": "{{range}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Bucket request rate (per second)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "targets": [
+        {
+          "expr": "sum by (bucket, api) (rate(minio_bucket_requests_total[5m]))",
+          "legendFormat": "{{bucket}} / {{api}}",
+          "refId": "A"
+        }
+      ]
+    }
+  ]
+}

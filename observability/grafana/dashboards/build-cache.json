@@ -1,0 +1,134 @@
+{
+  "title": "webapp — Turbopack Build Cache",
+  "uid": "turbopack-build-cache",
+  "description": "The exact cache directory that caused a real incident (619MB, silently stale for ~40 days, crash-looped `npm run dev` — see dashboard/docs/DASHBOARD_FEATURE_REMOVE_ANTDFRAMEWORK_TRACES.md §4). Two independent risk signals, both graphed here: raw size vs. a configured ceiling, and staleness (days behind the newest source edit) vs. its own ceiling — a small-but-stale cache is just as dangerous as a large one, so don't just watch the size panel. Dev-only: no data outside `webapp`'s own `npm run dev` process.",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-7d", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Exporter reachable (webapp running npm run dev?)",
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "1": { "text": "Yes", "color": "green" } } },
+            { "type": "value", "options": { "0": { "text": "No / unreachable", "color": "yellow" } } }
+          ],
+          "thresholds": { "steps": [{ "color": "yellow", "value": null }, { "color": "green", "value": 1 }] }
+        }
+      },
+      "targets": [{ "expr": "turbopack_cache_scrape_success", "refId": "A" }]
+    },
+    {
+      "id": 2,
+      "type": "gauge",
+      "title": "Cache size vs. ceiling",
+      "description": "Ceiling default 500MB (TURBOPACK_CACHE_CEILING_MB) — chosen because the real incident's cache had grown to 619MB before it broke the build.",
+      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 100 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        { "expr": "100 * turbopack_cache_size_bytes / turbopack_cache_ceiling_bytes", "refId": "A" }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "gauge",
+      "title": "Staleness vs. ceiling",
+      "description": "Ceiling default 7 days (TURBOPACK_CACHE_STALE_CEILING_DAYS) — deliberately proactive; the real incident's drift was ~40 days before it broke the build. scripts/check-turbopack-cache.mjs auto-cleans past this on the NEXT `npm run dev` boot.",
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 100 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        { "expr": "100 * turbopack_cache_stale_days / turbopack_cache_stale_ceiling_days", "refId": "A" }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Combined risk % (worse of the two)",
+      "description": "Matches dashboard/plugins/cacheMonitorPlugin.ts's own percentUsed logic exactly.",
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 100 }
+            ]
+          }
+        }
+      },
+      "targets": [{ "expr": "turbopack_cache_percent_used", "refId": "A" }]
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Cache size, raw",
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 5 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "unit": "bytes" } },
+      "targets": [{ "expr": "turbopack_cache_size_bytes", "refId": "A" }]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Cache size over time",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "unit": "bytes" } },
+      "targets": [
+        { "expr": "turbopack_cache_size_bytes", "legendFormat": "actual", "refId": "A" },
+        { "expr": "turbopack_cache_ceiling_bytes", "legendFormat": "ceiling", "refId": "B" }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Staleness (days behind source) over time",
+      "description": "This is the signal that actually broke the build last time — not size.",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "unit": "d" } },
+      "targets": [
+        { "expr": "turbopack_cache_stale_days", "legendFormat": "actual", "refId": "A" },
+        { "expr": "turbopack_cache_stale_ceiling_days", "legendFormat": "ceiling", "refId": "B" }
+      ]
+    }
+  ]
+}
