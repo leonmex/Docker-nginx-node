@@ -1,0 +1,330 @@
+{
+  "title": "node-nginx-clean \u2014 Smoke Test Suite Steps",
+  "uid": "nnc-smoketestsuit-steps",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "text",
+      "title": "How to read this dashboard",
+      "gridPos": {
+        "h": 5,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "Live view of `server/scripts/smoketestsuit/run.py` as it runs \u2014 built from the server's own Fastify access logs (`incoming request` / `request completed`), shipped file -> Promtail -> Loki, no changes to the smoke-test suite itself.\n\n- **Step panel** below groups requests into the suite's own 5 traffic-producing steps (`01-bootstrap` .. `05-returns-workflow`) exactly as named in `output/<run-id>/summary.txt`.\n- **`06-reconciliation` produces zero HTTP traffic** \u2014 it re-reads the database directly (`lib/db.py`), so it will never show a bar here; that's expected, not a gap.\n- **Endpoint panel** breaks the same window down by individual route, for drill-down.\n- Narrow the time range to a single `run.py` invocation to see its steps light up in order."
+      }
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Smoke Test Steps \u2014 Request Volume",
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 30,
+            "stacking": {
+              "mode": "none"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "sum",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(count_over_time({job=\"node-nginx-clean-server\"} |= \"incoming request\" |= `\"url\":\"/api/health\"` [$__interval]))",
+          "refId": "A",
+          "queryType": "range",
+          "legendFormat": "01 Bootstrap (health)"
+        },
+        {
+          "expr": "sum(count_over_time({job=\"node-nginx-clean-server\"} |= \"incoming request\" |~ `\"url\":\"(/api/accounts|/api/accounts/verify|/api/v1/addresses|/api/v1/wallet)` [$__interval]))",
+          "refId": "B",
+          "queryType": "range",
+          "legendFormat": "02 Populate Users (register/verify/address/wallet)"
+        },
+        {
+          "expr": "sum(count_over_time({job=\"node-nginx-clean-server\"} |= \"incoming request\" |= `\"url\":\"/api/v1/apparel/groups\"` [$__interval]))",
+          "refId": "C",
+          "queryType": "range",
+          "legendFormat": "03 Populate Products (apparel groups)"
+        },
+        {
+          "expr": "sum(count_over_time({job=\"node-nginx-clean-server\"} |= \"incoming request\" |~ `\"url\":\"(/api/v1/acquisitions/buy-now|/api/admin/shipments/[^\"]+/tracking|/api/v1/acquisitions/[^\"]+/confirm-receipt|/api/admin/wallets/[^\"]+/release-item)` [$__interval]))",
+          "refId": "D",
+          "queryType": "range",
+          "legendFormat": "04 Purchase Workflow (buy-now/ship/confirm-receipt/release)"
+        },
+        {
+          "expr": "sum(count_over_time({job=\"node-nginx-clean-server\"} |= \"incoming request\" |~ `\"url\":\"(/api/v1/acquisitions/[^\"]+/return-request|/api/admin/returns/)` [$__interval]))",
+          "refId": "E",
+          "queryType": "range",
+          "legendFormat": "05 Returns Workflow (return-request/CS decision)"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Request Volume by Endpoint (drill-down)",
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 15
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 30,
+            "stacking": {
+              "mode": "none"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "sum",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(count_over_time({job=\"node-nginx-clean-server\"} |= \"incoming request\" |= `\"url\":\"/api/accounts\"` [$__interval]))",
+          "refId": "A",
+          "queryType": "range",
+          "legendFormat": "Register"
+        },
+        {
+          "expr": "sum(count_over_time({job=\"node-nginx-clean-server\"} |= \"incoming request\" |= `\"url\":\"/api/accounts/verify\"` [$__interval]))",
+          "refId": "B",
+          "queryType": "range",
+          "legendFormat": "Verify email"
+        },
+        {
+          "expr": "sum(count_over_time({job=\"node-nginx-clean-server\"} |= \"incoming request\" |= `\"url\":\"/api/v1/addresses\"` [$__interval]))",
+          "refId": "C",
+          "queryType": "range",
+          "legendFormat": "Add address"
+        },
+        {
+          "expr": "sum(count_over_time({job=\"node-nginx-clean-server\"} |= \"incoming request\" |~ `\"url\":\"/api/v1/wallet` [$__interval]))",
+          "refId": "D",
+          "queryType": "range",
+          "legendFormat": "Wallet (balance/topup)"
+        },
+        {
+          "expr": "sum(count_over_time({job=\"node-nginx-clean-server\"} |= \"incoming request\" |= `\"url\":\"/api/login/account\"` [$__interval]))",
+          "refId": "E",
+          "queryType": "range",
+          "legendFormat": "Admin login (dashboard session)"
+        },
+        {
+          "expr": "sum(count_over_time({job=\"node-nginx-clean-server\"} |= \"incoming request\" |= `\"url\":\"/api/v1/apparel/groups\"` [$__interval]))",
+          "refId": "F",
+          "queryType": "range",
+          "legendFormat": "List product (apparel group)"
+        },
+        {
+          "expr": "sum(count_over_time({job=\"node-nginx-clean-server\"} |= \"incoming request\" |= `\"url\":\"/api/v1/acquisitions/buy-now\"` [$__interval]))",
+          "refId": "G",
+          "queryType": "range",
+          "legendFormat": "Buy now"
+        },
+        {
+          "expr": "sum(count_over_time({job=\"node-nginx-clean-server\"} |= \"incoming request\" |~ `\"url\":\"/api/admin/shipments/[^\"]+/tracking\"` [$__interval]))",
+          "refId": "H",
+          "queryType": "range",
+          "legendFormat": "Add shipment tracking"
+        },
+        {
+          "expr": "sum(count_over_time({job=\"node-nginx-clean-server\"} |= \"incoming request\" |~ `\"url\":\"/api/v1/acquisitions/[^\"]+/confirm-receipt\"` [$__interval]))",
+          "refId": "I",
+          "queryType": "range",
+          "legendFormat": "Confirm receipt"
+        },
+        {
+          "expr": "sum(count_over_time({job=\"node-nginx-clean-server\"} |= \"incoming request\" |~ `\"url\":\"/api/admin/wallets/[^\"]+/release-item\"` [$__interval]))",
+          "refId": "J",
+          "queryType": "range",
+          "legendFormat": "Escrow release (admin)"
+        },
+        {
+          "expr": "sum(count_over_time({job=\"node-nginx-clean-server\"} |= \"incoming request\" |~ `\"url\":\"/api/v1/acquisitions/[^\"]+/return-request\"` [$__interval]))",
+          "refId": "K",
+          "queryType": "range",
+          "legendFormat": "File return request"
+        },
+        {
+          "expr": "sum(count_over_time({job=\"node-nginx-clean-server\"} |= \"incoming request\" |~ `\"url\":\"/api/admin/returns/` [$__interval]))",
+          "refId": "L",
+          "queryType": "range",
+          "legendFormat": "CS return decision"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Total requests/min",
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 0,
+        "y": 25
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "targets": [
+        {
+          "expr": "sum(count_over_time({job=\"node-nginx-clean-server\"} |= \"request completed\" [$__interval]))",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Errors/min (4xx/5xx)",
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 8,
+        "y": 25
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "targets": [
+        {
+          "expr": "sum(count_over_time({job=\"node-nginx-clean-server\"} | json status=\"res.statusCode\" | msg=\"request completed\" | status >= 400 [$__interval]))",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "\"transaction completed\" spans/min",
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 16,
+        "y": 25
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "targets": [
+        {
+          "expr": "sum(count_over_time({job=\"node-nginx-clean-server\"} |= \"transaction completed\" [$__interval]))",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "logs",
+      "title": "Errors during this run (status >= 400 or level=error)",
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 31
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "options": {
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "targets": [
+        {
+          "expr": "{job=\"node-nginx-clean-server\"} |~ `\"statusCode\":4|\"statusCode\":5|\"level\":\"error\"`",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "logs",
+      "title": "Live tail \u2014 smoke-test API calls",
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 39
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "options": {
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "targets": [
+        {
+          "expr": "{job=\"node-nginx-clean-server\"} |~ `\"url\":\"(/api/accounts|/api/v1/addresses|/api/v1/wallet|/api/v1/apparel/groups|/api/v1/acquisitions|/api/admin/shipments|/api/admin/wallets|/api/admin/returns|/api/login/account)`",
+          "refId": "A"
+        }
+      ]
+    }
+  ]
+}

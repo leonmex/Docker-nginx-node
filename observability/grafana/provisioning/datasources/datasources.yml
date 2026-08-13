@@ -1,14 +1,25 @@
 apiVersion: 1
 
 datasources:
+  # uid pinned to the value Grafana had already auto-generated and persisted
+  # in the grafana-data volume — postgres-overview.json/redis-overview.json/
+  # minio-buckets.json/node-exporter-full.json/build-cache.json all already
+  # hardcode this exact value, so pinning it (rather than a human-readable
+  # name) keeps every existing dashboard working while still making it
+  # deterministic if the volume is ever wiped (`docker compose down -v`).
   - name: Prometheus
+    uid: PBFA97CFB590B2093
     type: prometheus
     access: proxy
     url: http://prometheus:9090
     isDefault: true
     editable: false
 
+  # Same reasoning — this is Loki's own already-persisted auto-generated
+  # uid, NOT the literal string "Loki" that logs-explorer.json's panels
+  # incorrectly assumed (a pre-existing, silent bug this fix also corrects).
   - name: Loki
+    uid: P8E80F9AEF21F6940
     type: loki
     access: proxy
     url: http://loki:3100

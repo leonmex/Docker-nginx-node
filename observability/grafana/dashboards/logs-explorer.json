@@ -12,7 +12,7 @@
       "type": "stat",
       "title": "Log lines / min (all levels)",
       "gridPos": { "h": 6, "w": 8, "x": 0, "y": 0 },
-      "datasource": { "type": "loki", "uid": "Loki" },
+      "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
       "targets": [
         {
           "expr": "sum(count_over_time({job=\"node-nginx-clean-server\"}[1m]))",
@@ -25,7 +25,7 @@
       "type": "stat",
       "title": "Error lines / min",
       "gridPos": { "h": 6, "w": 8, "x": 8, "y": 0 },
-      "datasource": { "type": "loki", "uid": "Loki" },
+      "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
       "fieldConfig": {
         "defaults": { "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] } },
         "overrides": []
@@ -43,7 +43,7 @@
       "title": "\"transaction completed\" (telemetry spans) / min",
       "description": "shipments.*/offers.*/acquisitions.*/conversations.* mutations — see server/src/core/TelemetryCollector.ts",
       "gridPos": { "h": 6, "w": 8, "x": 16, "y": 0 },
-      "datasource": { "type": "loki", "uid": "Loki" },
+      "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
       "targets": [
         {
           "expr": "sum(count_over_time({job=\"node-nginx-clean-server\"} |= \"transaction completed\" [1m]))",
@@ -56,7 +56,7 @@
       "type": "logs",
       "title": "Errors",
       "gridPos": { "h": 10, "w": 24, "x": 0, "y": 6 },
-      "datasource": { "type": "loki", "uid": "Loki" },
+      "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
       "options": { "showTime": true, "wrapLogMessage": true, "enableLogDetails": true },
       "targets": [
         {
@@ -70,7 +70,7 @@
       "type": "logs",
       "title": "All logs (live tail)",
       "gridPos": { "h": 14, "w": 24, "x": 0, "y": 16 },
-      "datasource": { "type": "loki", "uid": "Loki" },
+      "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
       "options": { "showTime": true, "wrapLogMessage": true, "enableLogDetails": true },
       "targets": [
         {
