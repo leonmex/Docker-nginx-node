@@ -96,6 +96,13 @@ public
 # Docker
 docker-compose.override.yml
 
+# TLS private keys/certs — dev self-signed today, the real Cloudflare Origin
+# CA cert/key land here later (nginx/prod/*.conf reference
+# nginx/certs/cloudflare_origin.{crt,key}) — never commit either, per
+# server/docs/trade-off-v2-devops-review.md Finding #3.
+nginx/certs/*.key
+nginx/certs/*.crt
+
 # Terraform (infra/terraform/**) — never commit the provider binary cache,
 # real state (can contain sensitive resource attributes), or binary plan
 # files (can embed "sensitive"-marked variable values in extractable form —

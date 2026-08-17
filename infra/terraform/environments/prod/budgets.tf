@@ -44,8 +44,8 @@ resource "aws_sns_topic_subscription" "budget_alerts_email" {
 resource "aws_budgets_budget" "monthly_cost" {
   name         = "blablarags-prod-monthly-cost"
   budget_type  = "COST"
-  limit_amount = tostring(var.budget_limit_eur)
-  limit_unit   = "EUR"
+  limit_amount = tostring(var.budget_limit_usd)
+  limit_unit   = "USD"
   time_unit    = "MONTHLY"
 
   notification {

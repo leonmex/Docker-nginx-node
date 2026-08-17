@@ -28,7 +28,11 @@ resource "aws_db_instance" "postgres" {
   publicly_accessible = true
   multi_az            = false
 
-  backup_retention_period = 7
+  # 1 day, not the originally-planned 7: this account hit
+  # FreeTierRestrictionError at 7 (a free-tier backup-retention cap still
+  # active on this account despite being >12 months old — contradicts the
+  # docs' original assumption, discovered via a rejected apply 2026-08-17).
+  backup_retention_period = 1
 
   # Deliberately disposable: lets scripts/aws-teardown.sh run `terraform destroy`
   # unattended if the cost cap is ever breached, with no manual snapshot/protection

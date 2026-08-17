@@ -189,23 +189,40 @@ fi
 # it silently bakes a dead address into every image URL the server writes
 # from then on, which is exactly what happened before this check existed
 # (see docs/steps-validation-migration-ts07.md's sibling investigation).
+#
+# Skipped once real Cloudflare R2 credentials are configured (R2_ENDPOINT/
+# R2_ACCESS_KEY/R2_SECRET_KEY all set): at that point uploads go straight to
+# R2, not local MinIO, so the LAN IP + /media (nginx -> local MinIO proxy)
+# is the WRONG address — it would silently point every new upload's public
+# URL at a backend that never received the object. Real bug hit
+# 2026-08-17: images/invoice PDFs got "Access Denied"/unreachable because
+# this override kept re-stamping the LAN IP over the correct R2 public
+# domain. Once R2 is configured, set MINIO_PUBLIC_URL_BASE by hand (or via
+# CDN - Images system_settings) to the real R2 public URL/custom domain.
 # ---------------------------------------------------------------------------
-LAN_IP="$(hostname -I 2>/dev/null | awk '{print $1}')"
-if [ -z "$LAN_IP" ]; then
-  LAN_IP="$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for (i=1;i<=NF;i++) if ($i=="src") print $(i+1)}')"
-fi
-LAN_IP="${LAN_IP:-127.0.0.1}"
-
-HTTPS_PORT_FOR_MEDIA="$(get_env_var HOST_HTTPS_PORT 443)"
-if [ "$HTTPS_PORT_FOR_MEDIA" = "443" ]; then
-  NEW_MEDIA_BASE="https://${LAN_IP}/media"
+R2_ENDPOINT_SET="$(get_env_var R2_ENDPOINT "")"
+R2_ACCESS_KEY_SET="$(get_env_var R2_ACCESS_KEY "")"
+R2_SECRET_KEY_SET="$(get_env_var R2_SECRET_KEY "")"
+if [ -n "$R2_ENDPOINT_SET" ] && [ -n "$R2_ACCESS_KEY_SET" ] && [ -n "$R2_SECRET_KEY_SET" ]; then
+  echo "  MINIO_PUBLIC_URL_BASE left untouched — real R2 credentials are configured (see this block's comment)."
 else
-  NEW_MEDIA_BASE="https://${LAN_IP}:${HTTPS_PORT_FOR_MEDIA}/media"
-fi
-CURRENT_MEDIA_BASE="$(get_env_var MINIO_PUBLIC_URL_BASE "")"
-if [ "$CURRENT_MEDIA_BASE" != "$NEW_MEDIA_BASE" ]; then
-  echo "  MINIO_PUBLIC_URL_BASE ${CURRENT_MEDIA_BASE:-<unset>} -> ${NEW_MEDIA_BASE}"
-  set_env_var "MINIO_PUBLIC_URL_BASE" "$NEW_MEDIA_BASE"
+  LAN_IP="$(hostname -I 2>/dev/null | awk '{print $1}')"
+  if [ -z "$LAN_IP" ]; then
+    LAN_IP="$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for (i=1;i<=NF;i++) if ($i=="src") print $(i+1)}')"
+  fi
+  LAN_IP="${LAN_IP:-127.0.0.1}"
+
+  HTTPS_PORT_FOR_MEDIA="$(get_env_var HOST_HTTPS_PORT 443)"
+  if [ "$HTTPS_PORT_FOR_MEDIA" = "443" ]; then
+    NEW_MEDIA_BASE="https://${LAN_IP}/media"
+  else
+    NEW_MEDIA_BASE="https://${LAN_IP}:${HTTPS_PORT_FOR_MEDIA}/media"
+  fi
+  CURRENT_MEDIA_BASE="$(get_env_var MINIO_PUBLIC_URL_BASE "")"
+  if [ "$CURRENT_MEDIA_BASE" != "$NEW_MEDIA_BASE" ]; then
+    echo "  MINIO_PUBLIC_URL_BASE ${CURRENT_MEDIA_BASE:-<unset>} -> ${NEW_MEDIA_BASE}"
+    set_env_var "MINIO_PUBLIC_URL_BASE" "$NEW_MEDIA_BASE"
+  fi
 fi
 
 # Reload .env now that any conflicting ports / MINIO_PUBLIC_URL_BASE were

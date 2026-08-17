@@ -90,8 +90,34 @@ variable "alert_email" {
   default     = "nbgsys@gmail.com"
 }
 
-variable "budget_limit_eur" {
-  description = "Account-wide monthly cost cap that triggers alert emails"
+variable "budget_limit_usd" {
+  description = "Account-wide monthly cost cap that triggers alert emails. USD, not EUR — this account's billing currency only accepts USD (confirmed via a rejected apply)."
   type        = number
-  default     = 40
+  default     = 45
+}
+
+variable "ghcr_pull_token" {
+  description = <<-EOT
+    Long-lived, read:packages-only GitHub PAT used by the EC2 instance to
+    `docker login ghcr.io` and pull the server/dashboard images, if those
+    repos are private. Provided by you, not Terraform-generated — set via
+    TF_VAR_ghcr_pull_token at plan/apply time, never committed to a tfvars
+    file.
+  EOT
+  type      = string
+  sensitive = true
+}
+
+variable "nginx_basic_auth_htpasswd" {
+  description = <<-EOT
+    Full content of an nginx `auth_basic_user_file` (APR1-MD5 hashes, one
+    `user:hash` per line) gating web.blablarags.com (shop) and
+    admin.blablarags.com (dashboard) during the pre-launch phase.
+    Deliberately NOT applied to api.blablarags.com. Provided by you via
+    SECRETES/Basic-Auth/users-access.md, hashed with `openssl passwd -apr1`
+    (never stored as plaintext) — set via TF_VAR_nginx_basic_auth_htpasswd
+    at plan/apply time, never committed to a tfvars file.
+  EOT
+  type      = string
+  sensitive = true
 }
