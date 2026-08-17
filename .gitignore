@@ -58,6 +58,11 @@ typings/
 .env
 .env.test
 .env.presentation
+.env.aws.rds
+
+# Plaintext AWS RDS credentials (server/docs/AWS-DEPLOY-PLAN-OK.md) — the
+# durable copy lives in AWS Secrets Manager, never committed here.
+SECRETES/
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
@@ -90,6 +95,21 @@ public
 
 # Docker
 docker-compose.override.yml
+
+# Terraform (infra/terraform/**) — never commit the provider binary cache,
+# real state (can contain sensitive resource attributes), or binary plan
+# files (can embed "sensitive"-marked variable values in extractable form —
+# sensitivity is a CLI-display redaction, not encryption at rest).
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
 
 server/
 dashboard/
