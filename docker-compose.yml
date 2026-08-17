@@ -42,9 +42,11 @@ services:
       - ${HOST_HTTPS_PORT:-443}:443
       - ${HOST_PROXY_PORT_4321:-4321}:4321
       - ${HOST_PROXY_PORT_3000:-3000}:3000
+      - ${HOST_PROXY_PORT_3002:-3002}:3002
     depends_on:
       - webapp
       - server
+      - shop
       - minio
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
@@ -177,6 +179,42 @@ services:
       - redis
       - minio
       - mailhog
+    networks:
+      - node_network
+
+  # Public storefront (Next.js App Router) — replaces the Astro coming-soon
+  # site as the real product. Calls the same Fastify API server as the
+  # mobile app, over the JWT-bearer surface (not the dashboard's session
+  # cookie) — see BLABLARAGS-SYSTEM-ANALISIS-FULL-SUITE.md §3-4.
+  #
+  # Not exposed to the host directly (same convention as `webapp`) — real
+  # access, including TLS, goes through nginx's `listen 3002 ssl` server
+  # block in nginx/default.conf, matching every other frontend in this
+  # stack. `next dev` binds 0.0.0.0:3002 so nginx can reach it on the
+  # docker network, but plain-HTTP 3002 is never published to the host.
+  shop:
+    container_name: shop
+    image: node:22-alpine
+    working_dir: /usr/src/shop
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=development
+      - HOST=0.0.0.0
+      - PORT=3002
+      # Dev-only: next.config.ts rewrites relative /api/* calls here so the
+      # same client code works whether nginx is in front (prod) or not (dev
+      # convenience, e.g. curling the container directly).
+      - API_PROXY_TARGET=http://server:5000
+      # next.config.ts extracts this URL's hostname to build Next 16's
+      # `allowedDevOrigins` — see that file's comment. Same dynamically-
+      # updated LAN IP the server/webapp already use, not hardcoded here.
+      - MINIO_PUBLIC_URL_BASE=${MINIO_PUBLIC_URL_BASE:-}
+    command: sh -c "npm install --ignore-scripts && npm run dev"
+    volumes:
+      - ./shop:/usr/src/shop
+      - shop_node_modules:/usr/src/shop/node_modules
+    depends_on:
+      - server
     networks:
       - node_network
 
@@ -326,4 +364,5 @@ volumes:
   server-logs-local:
   webapp_node_modules:
   server_node_modules:
+  shop_node_modules:
   website_node_modules: # elasticsearch-data:

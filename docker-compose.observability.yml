@@ -157,7 +157,11 @@ services:
 networks:
   node_network:
     external: true
-    name: node-nginx-clean_node_network
+    # Must match the root docker-compose.yml's actual derived network name
+    # for THIS directory (Compose's default project name = lowercased
+    # directory basename) — verify with `docker network ls` if this ever
+    # drifts again (e.g. after cloning into a differently-named directory).
+    name: docker-nginx-node_node_network
 
 volumes:
   prometheus-data:
