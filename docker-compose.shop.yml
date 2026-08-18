@@ -1,0 +1,47 @@
+# Production deployment for shop — runs on its OWN EC2 instance
+# (infra/terraform/environments/prod/ec2-shop.tf), separate from
+# server/dashboard's instance (docker-compose.prod.yml). Images pulled from
+# GHCR, not built here.
+#
+# shop reaches the API exclusively through the public
+# https://api.blablarags.com (see next.config.ts / nginx/prod/
+# web.blablarags.com.conf) — no server/redis/RDS on this instance at all.
+#
+# Deployed via scripts/deploy-shop-to-ec2.sh.
+#
+#   Deploy:  docker compose -f docker-compose.shop.yml pull && \
+#            docker compose -f docker-compose.shop.yml up -d
+#   Stop:    docker compose -f docker-compose.shop.yml down
+services:
+  shop:
+    image: ghcr.io/leonmex/shop-blablarags:latest
+    container_name: shop
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - HOST=0.0.0.0
+      - PORT=3002
+      - API_PROXY_TARGET=https://api.blablarags.com
+    expose:
+      - "3002"
+    networks:
+      - node_network
+
+  proxy:
+    image: nginx:latest
+    container_name: proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - shop
+    volumes:
+      - ./nginx/prod:/etc/nginx/conf.d:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+      - ./nginx/secrets:/etc/nginx/secrets:ro
+    networks:
+      - node_network
+
+networks:
+  node_network:

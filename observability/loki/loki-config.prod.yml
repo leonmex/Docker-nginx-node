@@ -1,0 +1,61 @@
+# Production variant of loki-config.yml — same architecture (S3-compatible
+# object storage backend), pointed at a real Cloudflare R2 bucket
+# (logs-blabla) instead of local dev's MinIO. This is exactly the swap that
+# file's own header comment anticipated ("only the endpoint changes at
+# migration time").
+#
+# Values substituted at deploy time by scripts/deploy-to-ec2.sh into
+# LOKI_S3_ENDPOINT/LOKI_S3_ACCESS_KEY/LOKI_S3_SECRET_KEY (R2 credentials,
+# same ones the app itself uses for image/document storage) via Loki's
+# -config.expand-env=true flag.
+
+auth_enabled: false
+
+server:
+  http_listen_port: 3100
+  grpc_listen_port: 9096
+
+common:
+  path_prefix: /loki
+  replication_factor: 1
+  ring:
+    kvstore:
+      store: inmemory
+
+schema_config:
+  configs:
+    - from: 2024-01-01
+      store: tsdb
+      object_store: s3
+      schema: v13
+      index:
+        prefix: index_
+        period: 24h
+
+storage_config:
+  aws:
+    endpoint: ${LOKI_S3_ENDPOINT}
+    bucketnames: logs-blabla
+    region: auto
+    access_key_id: ${LOKI_S3_ACCESS_KEY}
+    secret_access_key: ${LOKI_S3_SECRET_KEY}
+    s3forcepathstyle: true
+    insecure: false
+  tsdb_shipper:
+    active_index_directory: /loki/tsdb-index
+    cache_location: /loki/tsdb-cache
+
+limits_config:
+  retention_period: 360h # 15 days, matches Prometheus's retention
+  reject_old_samples: true
+  reject_old_samples_max_age: 168h
+  ingestion_rate_mb: 16
+  ingestion_burst_size_mb: 32
+
+compactor:
+  working_directory: /loki/compactor
+  retention_enabled: true
+  delete_request_store: s3
+
+analytics:
+  reporting_enabled: false

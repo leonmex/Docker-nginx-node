@@ -159,7 +159,12 @@ resource "aws_eip" "app" {
 
 resource "aws_instance" "app" {
   ami                    = data.aws_ami.ubuntu.id
-  instance_type           = "t3.micro"
+  # t3.micro (1GB) originally, upgraded to t3.small (2GB) after adding the
+  # observability stack (Loki/Grafana/Prometheus + 3 exporters) alongside
+  # server/dashboard — `free -h` showed only 60MB available with zero swap
+  # configured, real OOM risk under any traffic/log-volume spike, not
+  # hypothetical. ~+$7.50/month.
+  instance_type           = "t3.small"
   subnet_id               = data.aws_subnets.default.ids[0]
   vpc_security_group_ids  = [aws_security_group.app.id]
   iam_instance_profile    = aws_iam_instance_profile.app.name

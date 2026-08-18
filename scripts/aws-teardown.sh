@@ -2,11 +2,22 @@
 # Emergency "stop paying now" button for the blablarags AWS infra
 # (infra/terraform/environments/prod + infra/terraform/bootstrap).
 #
-# Destroys, in order: RDS instance + its security group/subnet group/secrets/
-# budget/SNS topic (prod), then the Terraform state S3 bucket + DynamoDB lock
-# table (bootstrap). Then verifies nothing blablarags-prod-* is left in the
-# account — so "the script ran" and "billing actually stopped" aren't just
-# assumed to be the same thing.
+# Destroys, in order: everything in environments/prod's Terraform state —
+# RDS instance, its security group/subnet group/secrets/budget/SNS topic,
+# the app EC2 instance + shop EC2 instance (if applied) with their Elastic
+# IPs/security groups, the GitHub OIDC provider + per-repo deploy IAM roles,
+# the app/shop instance IAM roles + the GHCR pull-token secret — then the
+# Terraform state S3 bucket + DynamoDB lock table (bootstrap). A single
+# `terraform destroy` on environments/prod covers all of this since it all
+# lives in that one state file; no per-resource destroy calls needed. Then
+# verifies nothing blablarags-prod-* is left in the account — so "the script
+# ran" and "billing actually stopped" aren't just assumed to be the same
+# thing.
+#
+# NOT covered (different provider, not Terraform-managed here): Cloudflare
+# R2 buckets (media/CDN bucket, logs-blabla) and DNS records. Clean those up
+# separately in the Cloudflare dashboard if you need to zero out that spend
+# too — R2 is near-free at this scale so it's usually not urgent.
 #
 # This is a ONE-WAY DOOR: prod.tfvars has deletion_protection=false and
 # skip_final_snapshot=true specifically so this can run unattended-fast in an
@@ -81,6 +92,60 @@ RDS_LEFT="$(aws rds describe-db-instances \
   --output text 2>&1 || true)"
 if [ -n "$RDS_LEFT" ]; then
   echo "  STILL PRESENT: $RDS_LEFT" >&2
+  FAILED=1
+else
+  echo "  clean."
+fi
+
+echo
+echo "-- EC2 instances (app + shop) --"
+EC2_LEFT="$(aws ec2 describe-instances \
+  --profile "$AWS_PROFILE" --region "$AWS_REGION" \
+  --filters "Name=tag:Name,Values=blablarags-prod-*" "Name=instance-state-name,Values=pending,running,stopping,stopped" \
+  --query "Reservations[].Instances[].InstanceId" \
+  --output text 2>&1 || true)"
+if [ -n "$EC2_LEFT" ]; then
+  echo "  STILL PRESENT: $EC2_LEFT" >&2
+  FAILED=1
+else
+  echo "  clean."
+fi
+
+echo
+echo "-- Elastic IPs --"
+EIP_LEFT="$(aws ec2 describe-addresses \
+  --profile "$AWS_PROFILE" --region "$AWS_REGION" \
+  --filters "Name=tag:Name,Values=blablarags-prod-*" \
+  --query "Addresses[].AllocationId" \
+  --output text 2>&1 || true)"
+if [ -n "$EIP_LEFT" ]; then
+  echo "  STILL PRESENT: $EIP_LEFT" >&2
+  FAILED=1
+else
+  echo "  clean."
+fi
+
+echo
+echo "-- IAM roles (app/shop instance roles + per-repo OIDC deploy roles) --"
+IAM_LEFT="$(aws iam list-roles \
+  --profile "$AWS_PROFILE" --region "$AWS_REGION" \
+  --query "Roles[?starts_with(RoleName, 'blablarags-prod')].RoleName" \
+  --output text 2>&1 || true)"
+if [ -n "$IAM_LEFT" ]; then
+  echo "  STILL PRESENT: $IAM_LEFT" >&2
+  FAILED=1
+else
+  echo "  clean."
+fi
+
+echo
+echo "-- IAM OIDC provider (GitHub Actions) --"
+OIDC_LEFT="$(aws iam list-open-id-connect-providers \
+  --profile "$AWS_PROFILE" --region "$AWS_REGION" \
+  --query "OpenIDConnectProviderList[?contains(Arn, 'token.actions.githubusercontent.com')].Arn" \
+  --output text 2>&1 || true)"
+if [ -n "$OIDC_LEFT" ]; then
+  echo "  STILL PRESENT: $OIDC_LEFT" >&2
   FAILED=1
 else
   echo "  clean."

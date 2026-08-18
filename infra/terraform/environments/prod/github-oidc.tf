@@ -1,10 +1,8 @@
 # GitHub Actions -> AWS via OIDC, no static AWS keys in GitHub. One IAM role
 # per repo, trust policy scoped to that exact repo + master branch, allowed
-# only ssm:SendCommand against the app instance — see
-# docs/DEPLOY-TO-AWS-STEP-BY-STEP.md §5.
-#
-# shop deliberately not included yet (server + dashboard prioritized) — add
-# a third `aws_iam_role.deploy["shop"]` entry when that phase starts.
+# only ssm:SendCommand against THAT repo's own target instance (server/
+# dashboard share the app instance; shop has its own, separate instance —
+# see ec2-shop.tf) — see docs/DEPLOY-TO-AWS-STEP-BY-STEP.md §5.
 
 data "tls_certificate" "github_actions" {
   url = "https://token.actions.githubusercontent.com/.well-known/openid-configuration"
@@ -18,8 +16,9 @@ resource "aws_iam_openid_connect_provider" "github_actions" {
 
 locals {
   deploy_repos = {
-    server    = "leonmex/server-blablaragsandrigs"
-    dashboard = "leonmex/dashboard-blablaragsandrigs"
+    server    = { repo = "leonmex/server-blablaragsandrigs", instance_arn = aws_instance.app.arn }
+    dashboard = { repo = "leonmex/dashboard-blablaragsandrigs", instance_arn = aws_instance.app.arn }
+    shop      = { repo = "leonmex/shop-blablarags", instance_arn = aws_instance.shop.arn }
   }
 }
 
@@ -39,7 +38,7 @@ resource "aws_iam_role" "deploy" {
           "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
         }
         StringLike = {
-          "token.actions.githubusercontent.com:sub" = "repo:${each.value}:ref:refs/heads/master"
+          "token.actions.githubusercontent.com:sub" = "repo:${each.value.repo}:ref:refs/heads/master"
         }
       }
     }]
@@ -58,7 +57,7 @@ resource "aws_iam_role_policy" "deploy_ssm" {
       Effect   = "Allow"
       Action   = ["ssm:SendCommand"]
       Resource = [
-        aws_instance.app.arn,
+        each.value.instance_arn,
         "arn:aws:ssm:${var.aws_region}::document/AWS-RunShellScript",
       ]
     }]

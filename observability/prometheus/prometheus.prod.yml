@@ -1,0 +1,28 @@
+# Production variant of prometheus.yml — same core jobs (postgres/redis/
+# node exporters), minus dev-only targets that don't exist in production
+# (local MinIO's built-in metrics, the Turbopack dev-cache exporter — shop/
+# dashboard run production builds here, not `npm run dev`).
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - /etc/prometheus/rules/*.yml
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: [localhost:9090]
+
+  - job_name: postgres-exporter
+    static_configs:
+      - targets: [postgres-exporter:9187]
+
+  - job_name: redis-exporter
+    static_configs:
+      - targets: [redis-exporter:9121]
+
+  - job_name: node-exporter
+    static_configs:
+      - targets: [node-exporter:9100]

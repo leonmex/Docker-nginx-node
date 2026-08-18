@@ -23,11 +23,18 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - DB_SSL=true
+      # Structured JSON logs to a real file (in addition to stdout) so
+      # Promtail can tail them into Loki — see the promtail service below.
+      # logger.ts writes to LOG_DIR/LOG_FILE with no filesystem validation,
+      # so a plain bind-mounted directory (no NAS on EC2) works fine.
+      - LOG_OUTPUT=both
     # Internal only — nginx reverse-proxies to it as http://server:5000. No host port.
     expose:
       - "5000"
     depends_on:
       - redis
+    volumes:
+      - server-logs:/usr/src/server/logs
     networks:
       - node_network
 
@@ -68,10 +75,132 @@ services:
     depends_on:
       - server
       - webapp
+      - grafana
     volumes:
       - ./nginx/prod:/etc/nginx/conf.d:ro
       - ./nginx/certs:/etc/nginx/certs:ro
       - ./nginx/secrets:/etc/nginx/secrets:ro
+    networks:
+      - node_network
+
+  # --- Observability (Prometheus + Loki + Grafana) ---
+  # Adapted from docker-compose.observability.yml (local dev) — same
+  # architecture, R2 instead of local MinIO for Loki's storage, RDS instead
+  # of dbPostgres for postgres-exporter. See docs/DEPLOY-TO-AWS-STEP-BY-
+  # STEP.md and observability/*/*-config.prod.yml's own header comments.
+
+  prometheus:
+    image: prom/prometheus:v3.0.1
+    container_name: prometheus
+    volumes:
+      - ./observability/prometheus/prometheus.prod.yml:/etc/prometheus/prometheus.yml:ro
+      - ./observability/prometheus/rules:/etc/prometheus/rules:ro
+      - prometheus-data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=15d
+    expose:
+      - "9090"
+    networks:
+      - node_network
+
+  loki:
+    image: grafana/loki:3.3.0
+    container_name: loki
+    volumes:
+      - ./observability/loki/loki-config.prod.yml:/etc/loki/local-config.yaml:ro
+      - loki-data:/loki
+    command: -config.file=/etc/loki/local-config.yaml -config.expand-env=true
+    environment:
+      - LOKI_S3_ENDPOINT=${R2_ENDPOINT}
+      - LOKI_S3_ACCESS_KEY=${R2_ACCESS_KEY}
+      - LOKI_S3_SECRET_KEY=${R2_SECRET_KEY}
+    expose:
+      - "3100"
+    networks:
+      - node_network
+
+  promtail:
+    image: grafana/promtail:3.3.0
+    container_name: promtail
+    volumes:
+      - ./observability/promtail/promtail-config.prod.yml:/etc/promtail/config.yml:ro
+      - promtail-positions:/var/lib/promtail
+      # Same named volume `server` writes to — Promtail only ever tails.
+      - server-logs:/var/log/telemetry:ro
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+    networks:
+      - node_network
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.20.1
+    container_name: postgres-exporter
+    env_file:
+      - .env
+    environment:
+      # DB_HOST/PORT/POSTGRES_USER/PASSWORD/DB come from .env (assembled by
+      # deploy.sh from the RDS app-credentials secret) — sslmode=require,
+      # not disable, since RDS enforces TLS.
+      - DATA_SOURCE_NAME=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DB_HOST}:${DB_PORT}/${POSTGRES_DB}?sslmode=require
+      # app-dba-blablarags is a least-privilege app role, deliberately not
+      # rds_superuser — both disabled here always fail with "permission
+      # denied" against RDS for a non-superuser role (pg_ls_waldir, and
+      # rdsadmin being an RDS-internal system database), not a real
+      # exporter misconfiguration.
+      - PG_EXPORTER_EXCLUDE_DATABASES=rdsadmin
+    command:
+      - --no-collector.wal
+    networks:
+      - node_network
+
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.62.0
+    container_name: redis-exporter
+    environment:
+      - REDIS_ADDR=redis:6379
+    depends_on:
+      - redis
+    networks:
+      - node_network
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    container_name: node-exporter
+    pid: host
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/host/root:ro
+    command:
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      - --path.rootfs=/host/root
+      - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
+    networks:
+      - node_network
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    container_name: grafana
+    env_file:
+      - .env
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      # Full subdomain (grafana.blablarags.com), not a subpath — no
+      # SERVE_FROM_SUB_PATH needed, unlike local dev's /grafana/ path.
+      - GF_SERVER_ROOT_URL=https://grafana.blablarags.com/
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    expose:
+      - "3000"
+    depends_on:
+      - prometheus
+      - loki
     networks:
       - node_network
 
@@ -80,3 +209,8 @@ networks:
 
 volumes:
   redis-data:
+  server-logs:
+  prometheus-data:
+  loki-data:
+  grafana-data:
+  promtail-positions:
