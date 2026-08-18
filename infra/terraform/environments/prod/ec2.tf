@@ -106,6 +106,14 @@ resource "aws_iam_role_policy_attachment" "app_instance_ssm" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
 
+# Created out-of-band via plain `aws secretsmanager create-secret` (not a
+# Terraform resource here) — cookie/JWT/payment-encryption keys + R2
+# credentials. Looked up by name so the instance role can still be granted
+# least-privilege read access to it.
+data "aws_secretsmanager_secret" "app_runtime" {
+  name = "blablarags-prod-app-runtime"
+}
+
 resource "aws_iam_role_policy" "app_instance_secrets" {
   name = "blablarags-prod-app-instance-secrets"
   role = aws_iam_role.app_instance.id
@@ -119,6 +127,7 @@ resource "aws_iam_role_policy" "app_instance_secrets" {
         aws_secretsmanager_secret.postgres_app_credentials.arn,
         aws_secretsmanager_secret.nginx_basic_auth.arn,
         aws_secretsmanager_secret.ghcr_pull_token.arn,
+        data.aws_secretsmanager_secret.app_runtime.arn,
       ]
     }]
   })
